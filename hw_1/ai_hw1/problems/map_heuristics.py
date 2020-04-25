@@ -10,7 +10,7 @@ class AirDistHeuristic(HeuristicFunction):
         The air distance between the geographic location represented
          by `state` and the geographic location of the problem's target.
 
-        TODO [Ex.11]: implement this method!
+        [Ex.11]: implement this method!
         Use `self.problem` to access the problem.
         Use `self.problem.streets_map` to access the map.
         Given a junction index, use `streets_map[junction_id]` to find the
@@ -21,4 +21,16 @@ class AirDistHeuristic(HeuristicFunction):
         assert isinstance(self.problem, MapProblem)
         assert isinstance(state, MapState)
 
-        raise NotImplementedError  # TODO: remove this line!
+
+        heuristic_name = 'air distance'
+
+        current_junction = self.problem.streets_map[state.junction_id]
+        target_junction = self.problem.streets_map[self.problem.target_junction_id]
+
+        distance = target_junction.calc_air_distance_from(current_junction)
+        
+        return distance
+
+        
+
+        

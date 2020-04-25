@@ -45,12 +45,21 @@ class AStar(BestFirstSearch):
         Should calculate and return the f-score of the given node.
         This score is used as a priority of this node in the open priority queue.
 
-        TODO [Ex.9]: implement this method.
+        [Ex.9]: implement this method.
         Remember: In Weighted-A* the f-score is defined by ((1-w) * cost) + (w * h(state)).
         Notice: You may use `search_node.g_cost`, `self.heuristic_weight`, and `self.heuristic_function`.
         """
 
-        raise NotImplementedError  # TODO: remove this line!
+        # g = ((1-w) * cost)
+        g_score = (1 - self.heuristic_weight) * search_node.g_cost
+
+        # h = (w * h(state))
+        h_score = self.heuristic_weight * self.heuristic_function.estimate(search_node.state)
+
+        # f = g + h
+        f_score = g_score + h_score
+
+        return f_score
 
     def _open_successor_node(self, problem: GraphProblem, successor_node: SearchNode):
         """
@@ -60,7 +69,7 @@ class AStar(BestFirstSearch):
          node into the `self.open` priority queue, and may check the existence
          of another node representing the same state in `self.close`.
 
-        TODO [Ex.9]: implement this method.
+        [Ex.9]: implement this method.
         Have a look at the pseudo-code shown in class for A*. Here you should implement the same in python.
         Have a look at the implementation of `BestFirstSearch` to have better understanding.
         Use `self.open` (SearchNodesPriorityQueue) and `self.close` (SearchNodesCollection) data structures.
@@ -72,4 +81,32 @@ class AStar(BestFirstSearch):
                   but still could be improved.
         """
 
-        raise NotImplementedError  # TODO: remove this line!
+
+        # if node is in OPEN, check if the new node has a better 'f_score' than the existing in OPEN
+        #   if true, remove the old node, push the new one
+        if self.open.has_state(successor_node.state):
+            already_found_node_with_same_state = self.open.get_node_by_state(successor_node.state)
+            if already_found_node_with_same_state.expanding_priority > successor_node.expanding_priority:
+                self.open.extract_node(already_found_node_with_same_state)
+                self.open.push_node(successor_node)
+
+        # if node is in closed, but can be improved
+        elif self.close.has_state(successor_node.state):
+            node_found_in_closed = self.close.get_node_by_state(successor_node.state)
+            if node_found_in_closed.expanding_priority > successor_node.expanding_priority:
+                # remove the node from closed
+                self.close.remove_node(node_found_in_closed)
+
+                # add the node to the OPEN with the new new
+                self.open.push_node(successor_node)
+
+        #   Add new node to OPEN it wasn't there before
+        else:
+            self.open.push_node(successor_node)
+
+
+       
+
+                
+
+        
