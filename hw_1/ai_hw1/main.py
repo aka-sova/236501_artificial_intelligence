@@ -178,16 +178,24 @@ loaded_problems_by_size_and_opt_obj = {}
 def get_mda_problem(
         problem_input_size: str = 'small',
         optimization_objective: MDAOptimizationObjective = MDAOptimizationObjective.Distance):
+
+
     if (problem_input_size, optimization_objective) in loaded_problems_by_size_and_opt_obj:
         return loaded_problems_by_size_and_opt_obj[(problem_input_size, optimization_objective)]
+
+
     assert problem_input_size in {'small', 'moderate', 'big'}
+
     if problem_input_size not in loaded_problem_inputs_by_size:
         loaded_problem_inputs_by_size[problem_input_size] = MDAProblemInput.load_from_file(
             f'{problem_input_size}_mda.in', streets_map)
+
+
     problem = MDAProblem(
         problem_input=loaded_problem_inputs_by_size[problem_input_size],
         streets_map=streets_map,
         optimization_objective=optimization_objective)
+
     loaded_problems_by_size_and_opt_obj[(problem_input_size, optimization_objective)] = problem
     return problem
 
@@ -199,9 +207,17 @@ def basic_mda_problem_experiments():
     small_mda_problem_with_distance_cost = get_mda_problem('small', MDAOptimizationObjective.Distance)
 
     # Ex.14
-    # TODO: create an instance of `UniformCost`, solve the `small_mda_problem_with_distance_cost`
+    # create an instance of `UniformCost`, solve the `small_mda_problem_with_distance_cost`
     #       with it and print the results.
-    exit()  # TODO: remove!
+
+
+    # for successor_st in small_mda_problem_with_distance_cost.expand_state_with_costs(small_mda_problem_with_distance_cost.initial_state):
+    #     print(successor_st)
+
+    print("\n\nMDA PROBLEM (UNIFORM COST) : \n")
+    uc = UniformCost()
+    res = uc.solve_problem(small_mda_problem_with_distance_cost)
+    print(res)
 
 
 def mda_problem_with_astar_experiments():
@@ -317,13 +333,15 @@ def mda_problem_anytime_astar_experiments():
 
 def run_all_experiments():
     print('Running all experiments')
-    toy_map_problem_experiments()
+    # toy_map_problem_experiments()
     basic_mda_problem_experiments()
-    mda_problem_with_astar_experiments()
-    mda_problem_with_weighted_astar_experiments()
-    multiple_objectives_mda_problem_experiments()
-    mda_problem_with_astar_epsilon_experiments()
-    mda_problem_anytime_astar_experiments()
+
+    print("stop")
+    # mda_problem_with_astar_experiments()
+    # mda_problem_with_weighted_astar_experiments()
+    # multiple_objectives_mda_problem_experiments()
+    # mda_problem_with_astar_epsilon_experiments()
+    # mda_problem_anytime_astar_experiments()
 
 
 if __name__ == '__main__':
