@@ -214,6 +214,8 @@ def basic_mda_problem_experiments():
     # for successor_st in small_mda_problem_with_distance_cost.expand_state_with_costs(small_mda_problem_with_distance_cost.initial_state):
     #     print(successor_st)
 
+    # remain_path = small_mda_problem_with_distance_cost.get_all_certain_junctions_in_remaining_ambulance_path(state=small_mda_problem_with_distance_cost.initial_state)
+
     print("\n\nMDA PROBLEM (UNIFORM COST) : \n")
     uc = UniformCost()
     res = uc.solve_problem(small_mda_problem_with_distance_cost)
@@ -227,14 +229,25 @@ def mda_problem_with_astar_experiments():
     moderate_mda_problem_with_distance_cost = get_mda_problem('moderate', MDAOptimizationObjective.Distance)
 
     # Ex.17
-    # TODO: create an instance of `AStar` with the `MDAMaxAirDistHeuristic`,
+    # create an instance of `AStar` with the `MDAMaxAirDistHeuristic`,
     #       solve the `moderate_mda_problem_with_distance_cost` with it and print the results.
-    exit()  # TODO: remove!
+
+    print("\n\nA STAR  (MDAMaxAirDistHeuristic Heuristic) : \n")
+    a_star_1 = AStar(heuristic_function_type=MDAMaxAirDistHeuristic)
+    res = a_star_1.solve_problem(problem=moderate_mda_problem_with_distance_cost)
+    print(res)
+
+    ### TODO SEE WHY TAKES SO LONGGG
 
     # Ex.20
-    # TODO: create an instance of `AStar` with the `MDASumAirDistHeuristic`,
+    # create an instance of `AStar` with the `MDASumAirDistHeuristic`,
     #       solve the `moderate_mda_problem_with_distance_cost` with it and print the results.
-    exit()  # TODO: remove!
+
+    print("\n\nA STAR  (MDASumAirDistHeuristic Heuristic) : \n")
+    a_star_2 = AStar(heuristic_function_type=MDASumAirDistHeuristic)
+    res = a_star_2.solve_problem(problem=moderate_mda_problem_with_distance_cost)
+    print(res)
+
 
     # Ex.23
     # TODO: create an instance of `AStar` with the `MDAMSTAirDistHeuristic`,
@@ -334,10 +347,10 @@ def mda_problem_anytime_astar_experiments():
 def run_all_experiments():
     print('Running all experiments')
     # toy_map_problem_experiments()
-    basic_mda_problem_experiments()
+    # basic_mda_problem_experiments()
 
-    print("stop")
-    # mda_problem_with_astar_experiments()
+ 
+    mda_problem_with_astar_experiments()
     # mda_problem_with_weighted_astar_experiments()
     # multiple_objectives_mda_problem_experiments()
     # mda_problem_with_astar_epsilon_experiments()

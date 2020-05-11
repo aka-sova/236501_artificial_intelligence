@@ -27,7 +27,7 @@ class MDAMaxAirDistHeuristic(HeuristicFunction):
          junctions in the remaining ambulance path. We don't consider laboratories here because we
          do not know what laboratories would be visited in an optimal solution.
 
-        TODO [Ex.16]:
+        [Ex.16]:
             Calculate the `total_distance_lower_bound` by taking the maximum over the group
                 {airDistanceBetween(j1,j2) | j1,j2 in CertainJunctionsInRemainingAmbulancePath s.t. j1 != j2}
             Notice: The problem is accessible via the `self.problem` field.
@@ -49,7 +49,12 @@ class MDAMaxAirDistHeuristic(HeuristicFunction):
         if len(all_certain_junctions_in_remaining_ambulance_path) < 2:
             return 0
 
-        return 10  # TODO: modify this line.
+        total_distance_lower_bound = max(self.cached_air_distance_calculator.get_air_distance_between_junctions(junc_1, junc_2) \
+                                        for junc_1 in all_certain_junctions_in_remaining_ambulance_path \
+                                        for junc_2 in all_certain_junctions_in_remaining_ambulance_path \
+                                            if junc_1 != junc_2)
+
+        return total_distance_lower_bound
 
 
 class MDASumAirDistHeuristic(HeuristicFunction):
@@ -72,7 +77,7 @@ class MDASumAirDistHeuristic(HeuristicFunction):
         Note that we ignore here the problem constraints (like enforcing the #matoshim and free
          space in the ambulance's fridge). We only make sure to visit all certain junctions in
          `all_certain_junctions_in_remaining_ambulance_path`.
-        TODO [Ex.19]:
+        [Ex.19]:
             Complete the implementation of this method.
             Use `self.cached_air_distance_calculator.get_air_distance_between_junctions()` for air
              distance calculations.
@@ -87,7 +92,41 @@ class MDASumAirDistHeuristic(HeuristicFunction):
         if len(all_certain_junctions_in_remaining_ambulance_path) < 2:
             return 0
 
-        raise NotImplementedError  # TODO: remove this line and complete the missing part here!
+        total_distance = 0
+        current_calc_location = state.current_location
+        remaining_locations = all_certain_junctions_in_remaining_ambulance_path - frozenset({current_calc_location})
+
+        # iterate over junctions to find the closest one each time
+
+        while len(remaining_locations) != 1:
+            
+            first = True
+            closest_junction = None
+            
+            for remaining_loc in remaining_locations:
+
+                if first:
+                    min_distance = self.cached_air_distance_calculator.get_air_distance_between_junctions(current_calc_location, remaining_loc)
+                    closest_junction = remaining_loc
+                    first = False
+
+                else:
+                    distance = self.cached_air_distance_calculator.get_air_distance_between_junctions(current_calc_location, remaining_loc)
+                    if distance < min_distance:
+                        min_distance = distance
+                        closest_junction = remaining_loc
+
+            current_calc_location = closest_junction
+            total_distance += min_distance
+            remaining_locations = remaining_locations - frozenset({closest_junction})
+
+        # add the distance to the last junction
+        # len(remaining_locations) should be 1
+        # use next iter function to extract it
+        distance = self.cached_air_distance_calculator.get_air_distance_between_junctions(current_calc_location, next(iter(remaining_locations)))
+
+        total_distance += distance
+        return total_distance
 
 
 class MDAMSTAirDistHeuristic(HeuristicFunction):

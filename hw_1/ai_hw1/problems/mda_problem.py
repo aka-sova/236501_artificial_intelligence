@@ -285,8 +285,8 @@ class MDAProblem(GraphProblem):
         for lab_to_visit in not_visited_labs:
 
             # check refrigerator is not empty
-            if len(state_to_expand.tests_on_ambulance) ==  0 :
-                continue ; # refrigerator is not empty
+            if len(state_to_expand.tests_on_ambulance) ==  0:
+                continue ; # refrigerator is empty
 
             # we can visit the state. Calculate the cost
 
@@ -346,11 +346,21 @@ class MDAProblem(GraphProblem):
         """
         assert isinstance(state, MDAState)
 
+        # try to avoid redundance condition. no need for 1 line
+        if not isinstance(state.current_site, Laboratory):
+            return False
+
+        if state.tests_on_ambulance != frozenset({}):
+            return False
+
+        if state.tests_transferred_to_lab == frozenset({}):
+            return False
 
         original_set = frozenset(self.problem_input.reported_apartments)
-        if (original_set == (state.tests_on_ambulance | state.tests_transferred_to_lab )) :
-            return True
-        return False
+        if (original_set != state.tests_transferred_to_lab):
+            return False
+
+        return True
 
 
 
@@ -389,8 +399,17 @@ class MDAProblem(GraphProblem):
         This includes the ambulance's current location, and the locations of the reported apartments
          that hasn't been visited yet.
         The list should be ordered by the junctions index ascendingly (small to big).
-        TODO [Ex.16]: Implement this method.
+         [Ex.16]: Implement this method.
             Use the method `self.get_reported_apartments_waiting_to_visit(state)`.
             Use python's `sorted(..., key=...)` function.
         """
-        raise NotImplementedError  # TODO: remove this line!
+        
+        apartments_left_to_visit = self.get_reported_apartments_waiting_to_visit(state)
+
+        junctions_list = [apartment.location for apartment in apartments_left_to_visit]
+        junctions_list.append(state.current_location)
+
+        sorted_junctions_list = sorted(junctions_list, key=lambda junc : junc.index)
+
+
+        return sorted_junctions_list
