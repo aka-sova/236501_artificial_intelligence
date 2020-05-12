@@ -153,7 +153,7 @@ class MDAMSTAirDistHeuristic(HeuristicFunction):
 
     def _calculate_junctions_mst_weight_using_air_distance(self, junctions: List[Junction]) -> float:
         """
-        TODO [Ex.22]: Implement this method.
+        [Ex.22]: Implement this method.
               Use `networkx` (nx) package (already imported in this file) to calculate the weight
                of the minimum-spanning-tree of the graph in which the vertices are the given junctions
                and there is an edge between each pair of distinct junctions (no self-loops) for which
@@ -164,7 +164,26 @@ class MDAMSTAirDistHeuristic(HeuristicFunction):
               Use `nx.minimum_spanning_tree()` to get an MST. Calculate the MST size using the method
               `.size(weight='weight')`. Do not manually sum the edges' weights.
         """
-        raise NotImplementedError  # TODO: remove this line!
+
+
+        junctions_graph = nx.Graph()
+        junctions_graph.add_nodes_from(junctions)
+
+        # add node
+        # for each node, calculate the distance to already existing nodes in the graph
+
+        for junction_1 in junctions:
+            for junction_2 in junctions:
+                if junction_1 != junction_2:
+                    distance = self.cached_air_distance_calculator.get_air_distance_between_junctions(junction_1, junction_2)
+                    junctions_graph.add_edge(junction_1, junction_2, weight=distance)
+
+
+        min_tree = nx.minimum_spanning_tree(G = junctions_graph)
+        mst_size = min_tree.size(weight='weight')
+
+
+        return mst_size
 
 
 class MDATestsTravelDistToNearestLabHeuristic(HeuristicFunction):

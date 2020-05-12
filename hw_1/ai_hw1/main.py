@@ -232,27 +232,30 @@ def mda_problem_with_astar_experiments():
     # create an instance of `AStar` with the `MDAMaxAirDistHeuristic`,
     #       solve the `moderate_mda_problem_with_distance_cost` with it and print the results.
 
-    print("\n\nA STAR  (MDAMaxAirDistHeuristic Heuristic) : \n")
-    a_star_1 = AStar(heuristic_function_type=MDAMaxAirDistHeuristic)
-    res = a_star_1.solve_problem(problem=moderate_mda_problem_with_distance_cost)
-    print(res)
-
-    ### TODO SEE WHY TAKES SO LONGGG
+    # print("\n\nA STAR  (MDAMaxAirDistHeuristic Heuristic) : \n")
+    # a_star_1 = AStar(heuristic_function_type=MDAMaxAirDistHeuristic)
+    # res = a_star_1.solve_problem(problem=moderate_mda_problem_with_distance_cost)
+    # print(res)
 
     # Ex.20
     # create an instance of `AStar` with the `MDASumAirDistHeuristic`,
     #       solve the `moderate_mda_problem_with_distance_cost` with it and print the results.
 
-    print("\n\nA STAR  (MDASumAirDistHeuristic Heuristic) : \n")
-    a_star_2 = AStar(heuristic_function_type=MDASumAirDistHeuristic)
-    res = a_star_2.solve_problem(problem=moderate_mda_problem_with_distance_cost)
-    print(res)
+    # print("\n\nA STAR  (MDASumAirDistHeuristic Heuristic) : \n")
+    # a_star_2 = AStar(heuristic_function_type=MDASumAirDistHeuristic)
+    # res = a_star_2.solve_problem(problem=moderate_mda_problem_with_distance_cost)
+    # print(res)
 
 
     # Ex.23
-    # TODO: create an instance of `AStar` with the `MDAMSTAirDistHeuristic`,
+    #  create an instance of `AStar` with the `MDAMSTAirDistHeuristic`,
     #       solve the `moderate_mda_problem_with_distance_cost` with it and print the results.
-    exit()  # TODO: remove!
+
+    # print("\n\nA STAR  (MDAMSTAirDistHeuristic Heuristic) : \n")
+    # a_star_3 = AStar(heuristic_function_type=MDAMSTAirDistHeuristic)
+    # res = a_star_3.solve_problem(problem=moderate_mda_problem_with_distance_cost)
+    # print(res)
+    
 
 
 def mda_problem_with_weighted_astar_experiments():
