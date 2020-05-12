@@ -153,8 +153,8 @@ class BestFirstSearch(GraphProblemSolver):
                 nr_expanded_states += 1
 
                 # REMOVEEE
-                if nr_expanded_states % 1000 == 0 and problem.name in ['MDA(moderate_MDA(8):Distance)', 'MDA(small_MDA(5):Distance)']:
-                    print(f"Expanded: {nr_expanded_states} , open nodes: {len(self.open)}, closed nodes: {len(self.close)}") 
+                # if nr_expanded_states % 1000 == 0 and problem.name in ['MDA(moderate_MDA(8):Distance)', 'MDA(small_MDA(5):Distance)']:
+                #     print(f"Expanded: {nr_expanded_states} , open nodes: {len(self.open)}, closed nodes: {len(self.close)}") 
 
                 # Iterate over next states and perform the update step for each.
                 for operator_result in problem.expand_state_with_costs(next_node_to_expand.state):
