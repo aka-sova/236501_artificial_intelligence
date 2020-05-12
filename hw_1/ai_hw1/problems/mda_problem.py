@@ -101,7 +101,7 @@ class MDAState(GraphProblemState):
         if self.visited_labs != other.visited_labs:
             return False
 
-
+        return True
 
 
     def __hash__(self):
@@ -280,15 +280,10 @@ class MDAProblem(GraphProblem):
 
         # check all the LAB VISITS
 
+        # visit the non visited lab to pick matoshim
         not_visited_labs = set(self.problem_input.laboratories) - state_to_expand.visited_labs
 
         for lab_to_visit in not_visited_labs:
-
-            # check refrigerator is not empty
-            if len(state_to_expand.tests_on_ambulance) ==  0:
-                continue ; # refrigerator is empty
-
-            # we can visit the state. Calculate the cost
 
             successor_state =  MDAState(
                             current_site=lab_to_visit,
@@ -303,6 +298,24 @@ class MDAProblem(GraphProblem):
             op_result = OperatorResult(successor_state, operator_cost, f"go to lab {LabName}")
 
             yield op_result
+
+        # visit the visited lab if the refrigerator is not empty
+        if state_to_expand.get_total_nr_tests_taken_and_stored_on_ambulance() > 0:
+            for lab_to_visit in state_to_expand.visited_labs:
+                successor_state =  MDAState(
+                                current_site=lab_to_visit,
+                                tests_on_ambulance=frozenset({}),
+                                tests_transferred_to_lab=( state_to_expand.tests_transferred_to_lab | state_to_expand.tests_on_ambulance),
+                                nr_matoshim_on_ambulance=state_to_expand.nr_matoshim_on_ambulance,
+                                visited_labs=(state_to_expand.visited_labs | frozenset({lab_to_visit})))
+
+                operator_cost = self.get_operator_cost(state_to_expand, successor_state)
+
+                LabName = lab_to_visit.name
+                op_result = OperatorResult(successor_state, operator_cost, f"go to lab {LabName}")
+
+                yield op_result 
+            
 
     def get_operator_cost(self, prev_state: MDAState, succ_state: MDAState) -> MDACost:
         """
