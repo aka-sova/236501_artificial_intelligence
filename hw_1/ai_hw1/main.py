@@ -291,9 +291,14 @@ def multiple_objectives_mda_problem_experiments():
     moderate_mda_problem_with_tests_travel_dist_cost = get_mda_problem('moderate', MDAOptimizationObjective.TestsTravelDistance)
 
     # Ex.31
-    # TODO: create an instance of `AStar` with the `MDATestsTravelDistToNearestLabHeuristic`,
+    # create an instance of `AStar` with the `MDATestsTravelDistToNearestLabHeuristic`,
     #       solve the `moderate_mda_problem_with_tests_travel_dist_cost` with it and print the results.
-    exit()  # TODO: remove!
+
+    print("\n\nA STAR  (MDATestsTravelDistToNearestLabHeuristic Heuristic) : \n")
+    a_star_4 = AStar(heuristic_function_type=MDATestsTravelDistToNearestLabHeuristic)
+    res = a_star_4.solve_problem(problem=moderate_mda_problem_with_tests_travel_dist_cost)
+    print(res)
+    
 
     # Ex.34
     # TODO: Implement the algorithm A_2 described in this exercise in the assignment instructions.
@@ -360,7 +365,7 @@ def run_all_experiments():
  
     # mda_problem_with_astar_experiments()
     # mda_problem_with_weighted_astar_experiments()
-    # multiple_objectives_mda_problem_experiments()
+    multiple_objectives_mda_problem_experiments()
     # mda_problem_with_astar_epsilon_experiments()
     # mda_problem_anytime_astar_experiments()
 

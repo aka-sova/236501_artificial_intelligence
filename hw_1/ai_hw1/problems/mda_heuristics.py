@@ -206,17 +206,36 @@ class MDATestsTravelDistToNearestLabHeuristic(HeuristicFunction):
         The rest part of the total remained cost includes the distance between each non-visited reported-apartment
          and the closest lab (to this apartment) times the roommates in this apartment (as we take tests for all
          roommates).
-        TODO [Ex.29]:
+        [Ex.29]:
             Complete the implementation of this method.
             Use `self.problem.get_reported_apartments_waiting_to_visit(state)`.
         """
         assert isinstance(self.problem, MDAProblem)
         assert isinstance(state, MDAState)
 
-        def air_dist_to_closest_lab(junction: Junction) -> float:
+        def air_dist_to_closest_lab(heuristic_func : HeuristicFunction, junction: Junction) -> float:
             """
             Returns the distance between `junction` and the laboratory that is closest to `junction`.
             """
-            return min(...)  # TODO: replace `...` with the relevant implementation.
+            return min(heuristic_func.cached_air_distance_calculator.get_air_distance_between_junctions(junction, lab.location) for lab in heuristic_func.problem.problem_input.laboratories)
 
-        raise NotImplementedError
+        total_cost = 0
+        
+        # if tests are on ambulance, find the cost
+        if state.get_total_nr_tests_taken_and_stored_on_ambulance() > 0:
+
+            # find nearest lab
+            closest_lab_dist = air_dist_to_closest_lab(self, state.current_location)
+            total_cost += state.get_total_nr_tests_taken_and_stored_on_ambulance() * closest_lab_dist
+
+
+        # for all remaining apartment, find closest lab, calculate cost
+        apartments_left_to_visit = self.problem.get_reported_apartments_waiting_to_visit(state)
+
+        for apartment in apartments_left_to_visit:
+             closest_lab_dist = air_dist_to_closest_lab(self, apartment.location)
+             total_cost += apartment.nr_roommates * closest_lab_dist
+
+
+        return total_cost
+
