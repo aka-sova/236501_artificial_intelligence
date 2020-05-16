@@ -39,7 +39,7 @@ class AStarEpsilon(AStar):
         Extracts the next node to expand from the open queue,
          by focusing on the current FOCAL and choosing the node
          with the best within_focal_priority from it.
-        TODO [Ex.38]: Implement this method!
+        [Ex.38]: Implement this method!
         Find the minimum expanding-priority value in the `open` queue.
         Calculate the maximum expanding-priority of the FOCAL, which is
          the min expanding-priority in open multiplied by (1 + eps) where
@@ -69,4 +69,45 @@ class AStarEpsilon(AStar):
          for the extracted (and returned) node.
         """
 
-        raise NotImplementedError  # TODO: remove!
+        if self.open.is_empty == True:
+            return None
+
+        focal_dict = {}
+        # finding the minimum expanding priority:
+        # pop the first node in the queue
+        first_node = self.open.pop_next_node() 
+
+        # finding the maximum_priority
+        maximum_priority = first_node.expanding_priority * (1 + self.focal_epsilon)
+
+        # calculate its priority
+        first_node_priority = self.within_focal_priority_function(first_node, problem, self)
+
+        focal_dict[first_node] = first_node_priority
+
+
+        # pop all the nodes which has priority less than maximum_priority
+        # or less than max_focal_size
+        while len(focal_dict.keys()) <= self.max_focal_size and self.open.is_empty() == False:
+            
+            popped_node = self.open.pop_next_node() 
+
+            if popped_node.expanding_priority > maximum_priority:
+                self.open.push_node(popped_node)
+                break
+            
+            node_priority = self.within_focal_priority_function(popped_node, problem, self)
+            focal_dict[popped_node] = node_priority
+
+        # the 'index' is the node itself
+        minimum_priority_node =min(focal_dict, key = focal_dict.get)
+
+        # other nodes go back
+        del focal_dict[minimum_priority_node]
+
+        for key in focal_dict.keys():
+            self.open.push_node(key)
+
+        return minimum_priority_node
+
+
