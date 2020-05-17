@@ -66,7 +66,7 @@ class AnytimeAStar(GraphProblemSolver):
             low_heuristic_weight = 0.5
             high_heuristic_weight = self.initial_high_heuristic_weight_bound
             while (high_heuristic_weight - low_heuristic_weight) > 0.01:
-                # TODO [Ex.40]:
+                #  [Ex.40]:
                 #  Complete the missing part inside this loop.
                 #  Perform a binary search over the possible values of `heuristic_weight`.
                 #  In each iteration, create an AStar solver with:
@@ -84,7 +84,34 @@ class AnytimeAStar(GraphProblemSolver):
                 #   obtain the g-cost of a solution). Update iff the current inspected solution cost < the cost of
                 #   the best found solution so far.
                 #  Make sure to also read the big comment in the head of this class.
-                raise NotImplementedError   # TODO: remove this line!
+
+                print(f"Low : {low_heuristic_weight}, high: {high_heuristic_weight}")
+
+                current_weight = (low_heuristic_weight + high_heuristic_weight)/2
+                # and solve the given problem with it.
+                a_star_air_dist = AStar(heuristic_function_type=self.heuristic_function_type, 
+                                        heuristic_weight=current_weight,
+                                        max_nr_states_to_expand = self.max_nr_states_to_expand_per_iteration)
+                res = a_star_air_dist.solve_problem(problem=problem)
+
+                total_nr_expanded_states += res.nr_expanded_states
+                max_nr_stored_states = max(max_nr_stored_states, res.max_nr_stored_states)
+
+                
+
+                if res.is_solution_found:
+                    print(f"Found : {str(res.is_solution_found)}, cost: {res.solution_g_cost}")
+                    high_heuristic_weight = current_weight
+
+                    if res.solution_g_cost < best_solution.solution_g_cost:
+                        best_solution = res
+                        best_heuristic_weight = current_weight
+                else:
+                    print("Not found")
+                    low_heuristic_weight = current_weight
+
+
+
 
         self.solver_name = f'{self.__class__.solver_name} ' \
                            f'(h={best_solution.solver.heuristic_function.heuristic_name}, ' \
