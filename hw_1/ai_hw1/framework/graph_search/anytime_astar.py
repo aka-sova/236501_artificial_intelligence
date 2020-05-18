@@ -85,7 +85,7 @@ class AnytimeAStar(GraphProblemSolver):
                 #   the best found solution so far.
                 #  Make sure to also read the big comment in the head of this class.
 
-                print(f"Low : {low_heuristic_weight}, high: {high_heuristic_weight}")
+                # print(f"Low : {low_heuristic_weight}, high: {high_heuristic_weight}")
 
                 current_weight = (low_heuristic_weight + high_heuristic_weight)/2
                 # and solve the given problem with it.
@@ -100,14 +100,14 @@ class AnytimeAStar(GraphProblemSolver):
                 
 
                 if res.is_solution_found:
-                    print(f"Found : {str(res.is_solution_found)}, cost: {res.solution_g_cost}")
+                    # print(f"Found : {str(res.is_solution_found)}, cost: {res.solution_g_cost}")
                     high_heuristic_weight = current_weight
 
                     if res.solution_g_cost < best_solution.solution_g_cost:
                         best_solution = res
                         best_heuristic_weight = current_weight
                 else:
-                    print("Not found")
+                    # print("Not found")
                     low_heuristic_weight = current_weight
 
 

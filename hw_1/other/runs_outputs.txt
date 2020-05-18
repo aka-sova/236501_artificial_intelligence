@@ -1,0 +1,78 @@
+
+EX 14
+-------------
+MDA PROBLEM (UNIFORM COST) :
+
+MDA(small_MDA(5):Distance)            UniformCost                   
+time:  12.94   #dev: 1098    |space|: 1798     total_g_cost: 31528.65909   
+total_cost: MDACost(dist=  31528.659m, tests-travel=  52112.429m)   |path|: 8     
+
+
+EX 17
+-------------
+
+
+A STAR MEDIUM MDA (MDAMaxAirDistHeuristic Heuristic) :
+
+MDA(moderate_MDA(8):Distance)         A* (h=MDA-Max-AirDist, w=0.500)   
+time:  53.64   #dev: 33261   |space|: 41773    total_g_cost: 58254.18667   
+total_cost: MDACost(dist=  58254.187m, tests-travel= 131811.935m)   |path|: 13   
+
+
+
+EX 20
+-------------
+ 
+
+A STAR MEDIUM MDA (MDASumAirDistHeuristic Heuristic) :
+
+MDA(moderate_MDA(8):Distance)         A* (h=MDA-Sum-AirDist, w=0.500)   
+time:  15.63   #dev: 26966   |space|: 38550    total_g_cost: 58254.18667   
+total_cost: MDACost(dist=  58254.187m, tests-travel= 131811.935m)   |path|: 13    
+
+
+
+EX 23
+-------------
+
+
+A STAR MEDIUM MDA (MDAMSTAirDistHeuristic Heuristic) :
+
+MDA(moderate_MDA(8):Distance)         A* (h=MDA-MST-AirDist, w=0.500)   
+time:  76.36   #dev: 29766   |space|: 40024    total_g_cost: 58254.18667   
+total_cost: MDACost(dist=  58254.187m, tests-travel= 131811.935m)   |path|: 13    
+
+
+
+EX 31
+-------------
+
+
+A STAR  (MDATestsTravelDistToNearestLabHeuristic Heuristic) :
+
+MDA(moderate_MDA(8):TestsTravelDistance)   A* (h=MDA-TimeObjectiveSumOfMinAirDistFromLab, w=0.500)   
+time:  57.93   #dev: 28853   |space|: 41799    total_g_cost: 104387.48471   
+total_cost: MDACost(dist= 148981.147m, tests-travel= 104387.485m)   |path|: 19    
+
+
+
+EX 34
+--------------
+MDA(moderate_MDA(8):TestsTravelDistance)   A* (h=MDA-TimeObjectiveSumOfMinAirDistFromLab, w=0.500)   
+time:  18.57   #dev: 28438   |space|: 40498    total_g_cost: 104387.48471   
+total_cost: MDACost(dist=  89430.664m, tests-travel= 104387.485m)   |path|: 16 
+
+
+EX 39
+-----------
+Solve the MDA problem (small input, distance objective, using A*eps, use non-acceptable heuristic as focal heuristic).
+MDA(small_MDA(5):Distance)            A*eps (h=MDA-MST-AirDist, w=0.500)   
+time:  15.46   #dev: 564     |space|: 933      total_g_cost: 31528.65909   
+total_cost: MDACost(dist=  31528.659m, tests-travel=  52112.429m)   |path|: 8
+
+
+EX 41
+------------------
+MDA(moderate_MDA(8):Distance)         Anytime-A* (h=MDA-MST-AirDist, w=0.800)   
+time:  37.76   #dev: 1027    |space|: 740      total_g_cost: 64055.65000   
+total_cost: MDACost(dist=  64055.650m, tests-travel= 131870.337m)   |path|: 13 

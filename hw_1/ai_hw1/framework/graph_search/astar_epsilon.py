@@ -108,6 +108,9 @@ class AStarEpsilon(AStar):
         for key in focal_dict.keys():
             self.open.push_node(key)
 
+        if self.use_close:
+            self.close.add_node(minimum_priority_node)
+			
         return minimum_priority_node
 
 
