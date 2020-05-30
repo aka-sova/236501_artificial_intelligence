@@ -5,6 +5,7 @@ from LiveAnimation import LiveAnimation
 from LivePlayer import LivePlayer
 from MapsGenerator import *
 from SimplePlayer import SimplePlayer
+from MinimaxPlayer import MinimaxPlayer
 import time
 import sys, os
 # from PyQt4.QtCore import pyqtRemoveInputHook
@@ -151,8 +152,12 @@ def create_flags():
 
 if __name__ == '__main__':
     # print('runing')
-    player_1_type = sys.argv[1]
-    player_2_type = sys.argv[2]
+    # player_1_type = sys.argv[1]
+    # player_2_type = sys.argv[2]
+
+    player_1_type = "LivePlayer"
+    player_2_type = "MinimaxPlayer"
+
     module_1 = __import__(player_1_type)
     module_2 = __import__(player_2_type)
     player_1 = get_player(player_1_type, module_1)
