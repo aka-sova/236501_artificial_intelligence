@@ -23,6 +23,9 @@ class State:
             self.enemy_loc = new_loc
 
         self.board[new_loc] = -1
+
+    def __hash__(self):
+        return id(self)
         
 
 

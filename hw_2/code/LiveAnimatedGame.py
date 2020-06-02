@@ -156,7 +156,7 @@ if __name__ == '__main__':
     # player_2_type = sys.argv[2]
 
     player_1_type = "LivePlayer"
-    player_2_type = "AlphaBetaPlayer"
+    player_2_type = "OrderedAlphaBetaPlayer"
 
     module_1 = __import__(player_1_type)
     module_2 = __import__(player_2_type)
