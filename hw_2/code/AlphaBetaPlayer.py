@@ -6,13 +6,14 @@ from GeneralPlayer import State, GeneralPlayer
 
 
 
-class MinimaxPlayer(GeneralPlayer):
+class AlphaBetaPlayer(GeneralPlayer):
     def __init__(self):
         self.state = None        
         self.directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 
         self.leaves_developed = 0
         self.heuristics_used = 0
+        self.branches_pruned = 0
 
     def make_move(self, time_limit) -> tuple:  # time parameter is not used, we assume we have enough time.
 
@@ -29,28 +30,33 @@ class MinimaxPlayer(GeneralPlayer):
         # init
         current_depth = 1
         next_iteration_max_time = 0
-        self.heuristics_used = 1 # > 0
 
         
         # DEPTH = 1
         print(f"Depth : {current_depth}")
         self.leaves_developed = 0
-        (best_new_move, max_value ) = self.rb_minimax(self.state, DecidingAgent = "Me", D = current_depth)
+        (best_new_move, max_value ) = self.rb_alphabeta(self.state, DecidingAgent = "Me", D = current_depth, Alpha = float('-inf'), Beta = float('inf'))
         best_move_so_far = best_new_move
 
         print(f"Move value : {max_value}")
-        print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
+        print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
 
         time_until_now = tm.time() - ID_start_time
     
 
         while time_until_now + next_iteration_max_time < time_limit:
+
+            current_depth += 1
+
             # perform the next depth iteration  
             iteration_start_time = tm.time()
 
             print(f"Depth : {current_depth}")
+
             self.leaves_developed = 0
-            (best_new_move, max_value ) = self.rb_minimax(self.state, DecidingAgent = "Me", D = current_depth)
+            self.heuristics_used = 0
+
+            (best_new_move, max_value ) = self.rb_alphabeta(self.state, DecidingAgent = "Me", D = current_depth, Alpha = float('-inf'), Beta = float('inf'))
             best_move_so_far = best_new_move
 
             print(f"Move value : {max_value}")
@@ -61,10 +67,10 @@ class MinimaxPlayer(GeneralPlayer):
 
             last_iteration_time = tm.time() - iteration_start_time
 
-            print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
+            print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
             print(f"Predicted time : {next_iteration_max_time}, time elapsed: {last_iteration_time}")
 
-            current_depth += 1
+            
 
             next_iteration_max_time = self.predict_next_iteration(last_iteration_time)
             time_until_now = tm.time() - ID_start_time
@@ -80,7 +86,7 @@ class MinimaxPlayer(GeneralPlayer):
 
 
 
-    def rb_minimax(self, CurrentState : State,  DecidingAgent : str, D : int) -> tuple:
+    def rb_alphabeta(self, CurrentState : State,  DecidingAgent : str, D : int, Alpha: int, Beta: int) -> tuple:
         """Get the next most beneficial move
 
         CurrentState = TUPLE(BOARD, MY_LOC, ENEMY_LOC)
@@ -110,7 +116,7 @@ class MinimaxPlayer(GeneralPlayer):
         if DecidingAgent == "Me":
             # MAX
 
-            CurMax = float('-inf')          # check which value to put
+            CurMax = float('-inf')
             CurMaxMove = None
 
             for child_move in children_moves:
@@ -120,11 +126,17 @@ class MinimaxPlayer(GeneralPlayer):
                 ChildState.update(child_move, DecidingAgent)
                 
                 
-                _, max_child_value = self.rb_minimax(ChildState, "Enemy", D-1)
+                _, max_child_value = self.rb_alphabeta(ChildState, "Enemy", D-1, Alpha, Beta)
                 # print(f"D = {D} , max_child_value =  {str(max_child_value)}")
                 if max_child_value > CurMax:
                     CurMax = max_child_value
                     CurMaxMove = child_move
+
+                # ALPHABETA
+                Alpha = max(CurMax, Alpha)
+                if CurMax >= Beta:
+                    self.branches_pruned += 1
+                    return (None, float('inf'))
             
             return (CurMaxMove, CurMax)
 
@@ -132,7 +144,7 @@ class MinimaxPlayer(GeneralPlayer):
         else:
             # Enemy agent - MIN
 
-            CurMin = float("inf")          # check which value to put
+            CurMin = float("inf")
             CurMinMove = None
 
             for child_move in children_moves:
@@ -141,10 +153,16 @@ class MinimaxPlayer(GeneralPlayer):
                 ChildState = copy.deepcopy(CurrentState)
                 ChildState.update(child_move, DecidingAgent)
 
-                self.leaves_developed +=1
-                _, min_child_value = self.rb_minimax(ChildState, "Me", D-1)
+                
+                _, min_child_value = self.rb_alphabeta(ChildState, "Me", D-1, Alpha, Beta)
                 if min_child_value < CurMin:
                     CurMin = min_child_value
                     CurMinMove = child_move
+
+                # ALPHABETA
+                Beta = min(CurMin, Beta)
+                if CurMin <= Alpha:
+                    self.branches_pruned += 1
+                    return (None, float('-inf'))
             
             return (CurMinMove, CurMin)
