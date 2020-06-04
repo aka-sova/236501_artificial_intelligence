@@ -9,6 +9,8 @@ from GeneralPlayer import State, GeneralPlayer
 class OrderedAlphaBetaPlayer(GeneralPlayer):
     def __init__(self):
         super().__init__()
+
+        self.agent_name = "OrderedAlphaBetaPlayer"
         self.state = None        
         self.directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 
@@ -37,14 +39,15 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
         
         # DEPTH = 1
-        print(f"Depth : {current_depth}")
+        # print(f"Depth : {current_depth}")
+
         self.leaves_developed = 0
         (best_new_move, max_value ) = self.rb_ordered_alphabeta(self.state, DecidingAgent = "Me",\
              D = current_depth, Alpha = float('-inf'), Beta = float('inf'), isRoot = True)
         best_move_so_far = best_new_move
 
-        print(f"Move value : {max_value}")
-        print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
+        # print(f"Move value : {max_value}")
+        # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
 
         time_until_now = tm.time() - ID_start_time
     
@@ -56,7 +59,7 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
             # perform the next depth iteration  
             iteration_start_time = tm.time()
 
-            print(f"Depth : {current_depth}")
+            # print(f"Depth : {current_depth}")
 
             self.leaves_developed = 0
             self.heuristics_used = 0
@@ -66,7 +69,7 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
                     isRoot=True)
             best_move_so_far = best_new_move
 
-            print(f"Move value : {max_value}")
+            # print(f"Move value : {max_value}")
 
             if max_value == -100 or max_value == 100:
                 # the only outcome is losing or winning
@@ -74,17 +77,20 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
             last_iteration_time = tm.time() - iteration_start_time
 
-            print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
-            print(f"Predicted time : {next_iteration_max_time}, time elapsed: {last_iteration_time}")
+            # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
+            # print(f"Predicted time : {next_iteration_max_time}, time elapsed: {last_iteration_time}")
 
             
 
             next_iteration_max_time = self.predict_next_iteration(last_iteration_time)
             time_until_now = tm.time() - ID_start_time
 
-
-
-        print(f"Move chosen: {best_move_so_far}")
+        print("====================")
+        print(f"Agent: {self.agent_name}")
+        print(f"Depth reached : {current_depth}")
+        print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
+        print(f"Move chosen: {best_move_so_far}  Value = {max_value}")
+        print("====================")
 
         self.state.update(best_move_so_far, "Me")
 
@@ -120,13 +126,13 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
         # get all the children states
         children_moves = self.get_children(CurrentState, DecidingAgent)
 
-        if isRoot:           
-
+        if isRoot:  
             # reorder the moves according to the lastMinimaxValues
             if self.lastMinimaxValues != {}:
                 ordered_children_moves_dict = dict(sorted(self.lastMinimaxValues.items(), key = lambda kv:(kv[1])))
                 children_moves = list(ordered_children_moves_dict.keys())
-                children_moves.reverse() # we want to open the moves with BIGGERST minimax value first
+                # this part will be open ONLY by the ME agent. so we use the MAX
+                children_moves.reverse() # we want to open the moves with BIGGERST minimax value first 
 
         
         if DecidingAgent == "Me":
