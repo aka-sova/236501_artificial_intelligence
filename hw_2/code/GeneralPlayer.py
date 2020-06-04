@@ -2,6 +2,7 @@ import time as tm
 import copy
 
 from dataclasses import dataclass
+from MaxGroundHeuristic import *
 
 
 @dataclass
@@ -38,6 +39,8 @@ class GeneralPlayer:
         self.leaves_developed = 0
         self.heuristics_used = 0
 
+        self.max_ground_heuristic_func = MaxGroudHeuristic()
+
 
 
     def set_game_params(self, board):
@@ -57,6 +60,17 @@ class GeneralPlayer:
 
         self.state = State(board, my_loc, enemy_loc)
         self.state.board[enemy_loc] = -1
+
+    def max_ground_value(self, state : State, DecidingAgent : str):
+        """ Return the value based on MaxGroundHeuristic"""
+
+        self.max_ground_heuristic_func.board = state.board
+        self.max_ground_heuristic_func.player_loc = state.my_loc
+        self.max_ground_heuristic_func.opp_loc = state.enemy_loc
+
+        ground_value = self.max_ground_heuristic_func.evaluate()
+        
+        return ground_value
 
 
     def state_score(self, state : State, DecidingAgent : str):
@@ -99,6 +113,9 @@ class GeneralPlayer:
         heuristic_variables.append(self.state_score(state, DecidingAgent))
 
         # TODO add heuristics
+        heuristic_variables.append(self.max_ground_value(state, DecidingAgent))
+
+
 
         return sum(heuristic_variables)
 

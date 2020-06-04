@@ -8,6 +8,7 @@ from GeneralPlayer import State, GeneralPlayer
 
 class OrderedAlphaBetaPlayer(GeneralPlayer):
     def __init__(self):
+        super().__init__()
         self.state = None        
         self.directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 
