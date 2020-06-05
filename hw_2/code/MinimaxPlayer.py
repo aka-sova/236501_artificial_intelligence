@@ -8,6 +8,7 @@ from GeneralPlayer import State, GeneralPlayer
 
 class MinimaxPlayer(GeneralPlayer):
     def __init__(self):
+        self.agent_name = "MinimaxPlayer" 
         super().__init__()
         self.state = None        
         self.directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
@@ -34,13 +35,13 @@ class MinimaxPlayer(GeneralPlayer):
 
         
         # DEPTH = 1
-        print(f"Depth : {current_depth}")
+        # print(f"Depth : {current_depth}")
         self.leaves_developed = 0
         (best_new_move, max_value ) = self.rb_minimax(self.state, DecidingAgent = "Me", D = current_depth)
         best_move_so_far = best_new_move
 
-        print(f"Move value : {max_value}")
-        print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
+        # print(f"Move value : {max_value}")
+        # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
 
         time_until_now = tm.time() - ID_start_time
     
@@ -49,12 +50,12 @@ class MinimaxPlayer(GeneralPlayer):
             # perform the next depth iteration  
             iteration_start_time = tm.time()
 
-            print(f"Depth : {current_depth}")
+            # print(f"Depth : {current_depth}")
             self.leaves_developed = 0
             (best_new_move, max_value ) = self.rb_minimax(self.state, DecidingAgent = "Me", D = current_depth)
             best_move_so_far = best_new_move
 
-            print(f"Move value : {max_value}")
+            # print(f"Move value : {max_value}")
 
             if max_value == -100 or max_value == 100:
                 # the only outcome is losing or winning
@@ -62,8 +63,8 @@ class MinimaxPlayer(GeneralPlayer):
 
             last_iteration_time = tm.time() - iteration_start_time
 
-            print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
-            print(f"Predicted time : {next_iteration_max_time}, time elapsed: {last_iteration_time}")
+            # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
+            # print(f"Predicted time : {next_iteration_max_time}, time elapsed: {last_iteration_time}")
 
             current_depth += 1
 
@@ -71,8 +72,12 @@ class MinimaxPlayer(GeneralPlayer):
             time_until_now = tm.time() - ID_start_time
 
 
-
-        print(f"Move chosen: {best_move_so_far}")
+        print("====================")
+        print(f"Agent: {self.agent_name}")
+        print(f"Depth reached : {current_depth}")
+        print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
+        print(f"Move chosen: {best_move_so_far}  Value = {max_value}")
+        print("====================")
 
         self.state.update(best_move_so_far, "Me")
 
