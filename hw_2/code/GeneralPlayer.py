@@ -3,6 +3,7 @@ import copy
 
 from dataclasses import dataclass
 from MaxGroundHeuristic import *
+from DistFromOpponentHeuristic import *
 
 
 @dataclass
@@ -39,7 +40,8 @@ class GeneralPlayer:
         self.leaves_developed = 0
         self.heuristics_used = 0
 
-        self.max_ground_heuristic_func = MaxGroudHeuristic()
+        self.max_ground_heuristic_func = MaxGroundHeuristic()
+        self.dist_from_opponent_heuristic = DistFromOpponentHeuristic()
 
 
 
@@ -61,7 +63,7 @@ class GeneralPlayer:
         self.state = State(board, my_loc, enemy_loc)
         self.state.board[enemy_loc] = -1
 
-    def max_ground_value(self, state : State, DecidingAgent : str):
+    def max_ground_value(self, state : State):
         """ Return the value based on MaxGroundHeuristic"""
 
         self.max_ground_heuristic_func.board = state.board
@@ -72,8 +74,19 @@ class GeneralPlayer:
         
         return ground_value
 
+    def distance_from_opponent(self, state : State):
+        """ Return the current distance to the opponent"""
 
-    def state_score(self, state : State, DecidingAgent : str):
+        self.dist_from_opponent_heuristic.board = state.board
+        self.dist_from_opponent_heuristic.player_loc = state.my_loc
+        self.dist_from_opponent_heuristic.opp_loc = state.enemy_loc
+
+        distance_from_opp = self.dist_from_opponent_heuristic.evaluate()
+
+        return distance_from_opp
+
+
+    def state_score(self, state : State):
         """Return the numer of available states from a certain location
 
         0 = all moves available
@@ -84,10 +97,14 @@ class GeneralPlayer:
         
         """
 
-        if DecidingAgent == "Me":
-            board, loc = state.board, state.my_loc
-        else:
-            board, loc = state.board, state.enemy_loc
+        # always estimate the state score of 'Me'
+        board, loc = state.board, state.my_loc
+
+
+        # if DecidingAgent == "Me":
+        #     board, loc = state.board, state.my_loc
+        # else:
+        #     board, loc = state.board, state.enemy_loc
 
         num_steps_available = 0
         for d in self.directions:
@@ -110,10 +127,13 @@ class GeneralPlayer:
         heuristic_variables = []
 
         # num of available states from a certain location
-        heuristic_variables.append(self.state_score(state, DecidingAgent))
+        heuristic_variables.append(self.state_score(state))
 
-        # TODO add heuristics
-        heuristic_variables.append(self.max_ground_value(state, DecidingAgent))
+        # calculate the territory advantage of the player
+        heuristic_variables.append(self.max_ground_value(state))
+
+        # calculate the distance from an opponent
+        heuristic_variables.append(self.distance_from_opponent(state))
 
 
 
