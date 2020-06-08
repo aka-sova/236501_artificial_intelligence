@@ -32,6 +32,8 @@ class DistFromOpponentHeuristic:
                 return -1  # no path between source and dest
             cur_pos = min(next_destinations,
                           key=lambda k: next_destinations[k][1])  # next node is the destination with the shortest path
+        
+        self.board[target] = -1.0
         return min_paths_len[target][1]
 
     def get_next_pos(self, pos: tuple):

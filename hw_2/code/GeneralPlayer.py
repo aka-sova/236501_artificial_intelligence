@@ -1,6 +1,6 @@
 import time as tm
 import copy
-
+import numpy as np
 from dataclasses import dataclass
 from MaxGroundHeuristic import *
 from DistFromOpponentHeuristic import *
@@ -13,6 +13,8 @@ class State:
     board: list
     my_loc: tuple
     enemy_loc: tuple
+    # free_tiles_ratio : float
+    grey_tiles_am : int
 
     def update(self, move : [], DecidingAgent):
         """ update the current board and locations based on the move"""
@@ -26,6 +28,13 @@ class State:
             self.enemy_loc = new_loc
 
         self.board[new_loc] = -1
+
+        self.grey_tiles_am += 1
+
+    @property
+    def free_tiles_ratio(self):
+        global board_size
+        return round(self.grey_tiles_am / board_size,2)
 
     def __hash__(self):
         return id(self)
@@ -45,6 +54,7 @@ class GeneralPlayer:
         self.dist_from_opponent_heuristic = DistFromOpponentHeuristic()
         self.euclidean_distance_heuristic = EuclideanDistanceHeuristic()
 
+        self.heuristic_function_type = None
 
 
     def set_game_params(self, board):
@@ -62,9 +72,22 @@ class GeneralPlayer:
                     enemy_loc = (i, j)
                     break
 
-        self.state = State(board, my_loc, enemy_loc)
-        self.state.board[enemy_loc] = -1
+        global board_size
+        board_size = board.shape[0] * board.shape[1]
 
+        unique, counts = np.unique(board, return_counts=True)
+        counts_dict = dict(zip(unique, counts))
+
+        self.state = State(board, my_loc, enemy_loc, counts_dict[-1])
+        
+
+        self.state.board[enemy_loc] = -1
+        self.state.board[my_loc] = -1
+        self.state.grey_tiles_am += 2
+
+
+
+        # calculate the ratio of while tiles to the grey tiles
     def max_ground_value(self, state : State):
         """ Return the value based on MaxGroundHeuristic"""
 
@@ -141,10 +164,13 @@ class GeneralPlayer:
         heuristic_variables.append(self.max_ground_value(state))
 
         # calculate the distance from an opponent
-        heuristic_variables.append(self.distance_from_opponent(state))
+        dist_from_opp = self.distance_from_opponent(state)
+        if dist_from_opp != -1:
+            # if not - meaning we never meet an opponent and should only care about maximizing our own territory
+            heuristic_variables.append(dist_from_opp)
 
         # calculate the Euclidean distance from an opponent
-        heuristic_variables.append(self.euclidean_distance_from_opponent(state))
+        # heuristic_variables.append(self.euclidean_distance_from_opponent(state))
 
 
 
@@ -152,13 +178,13 @@ class GeneralPlayer:
 
 
     def predict_next_iteration(self, last_elapsed_time):
-
-        # b = 3 in the worst case
         
-        b = 3
-        new_leaves_estimation = self.leaves_developed * b
+        # b = 3
+        # new_leaves_estimation = self.leaves_developed * b
 
-        new_time = last_elapsed_time * (new_leaves_estimation / self.leaves_developed)
+        # new_time = last_elapsed_time * (new_leaves_estimation / self.leaves_developed)
+
+        new_time = last_elapsed_time * 4
 
         return new_time
 
@@ -242,9 +268,11 @@ class GeneralPlayer:
             children_moves = self.get_children(State, NextDecidingAgent)
 
             if len(children_moves) > 0:
-                utility = -100 # enemy wins
+                #utility = -100 # enemy wins
+                utility = -99999 # enemy wins
             else:
-                utility = 0  # teko
+                # utility = 0  # teko
+                utility = float('-9999') # not as bad as losing
 
         else:
             # ENEMY is in final state and has no moves
@@ -257,23 +285,10 @@ class GeneralPlayer:
             children_moves = self.get_children(State, NextDecidingAgent)
 
             if len(children_moves) > 0:
-                utility = 100  # win
+                utility = 99999  # win
             else:
                 utility = 0  # teko
-
-        # find a better number according to heuristics
-
-        # If DecidingAgent wins on this turn, return 100
-        # Else return -100
-
-        # utility = None
-
-        # if DecidingAgent == "Me":
-        #     # ME got into final state and have no moves - bad
-        #     utility = -100
-        # else:
-        #     # ENEMY is in final state and has no moves - good.
-        #     utility = 100
+                utility = float('-9999')  # teko
         
 
         return utility

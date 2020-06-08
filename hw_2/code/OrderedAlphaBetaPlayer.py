@@ -35,7 +35,6 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
         # init
         current_depth = 1
-        next_iteration_max_time = 0
 
         
         # DEPTH = 1
@@ -50,6 +49,8 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
         # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
 
         time_until_now = tm.time() - ID_start_time
+
+        next_iteration_max_time = self.predict_next_iteration(time_until_now) # time_until_now = last_iteration_time
     
 
         while time_until_now + next_iteration_max_time < time_limit:
@@ -71,7 +72,7 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
             # print(f"Move value : {max_value}")
 
-            if max_value == -100 or max_value == 100:
+            if max_value == -99999 or max_value == 99999:
                 # the only outcome is losing or winning
                 break
 
