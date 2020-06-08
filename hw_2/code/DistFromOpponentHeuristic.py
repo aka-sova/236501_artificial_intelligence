@@ -9,6 +9,9 @@ class DistFromOpponentHeuristic:
         return self.shortest_path(self.player_loc, self.opp_loc)
 
     def shortest_path(self, source, target):
+
+        self.board[target] = 0
+
         cur_pos = source
         visited_pos = set()
         min_paths_len = {source: (None, 0)}
@@ -43,5 +46,3 @@ class DistFromOpponentHeuristic:
                 next_pos.append(new_loc)
 
         return next_pos
-
-

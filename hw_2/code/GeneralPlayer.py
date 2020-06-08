@@ -4,6 +4,7 @@ import copy
 from dataclasses import dataclass
 from MaxGroundHeuristic import *
 from DistFromOpponentHeuristic import *
+from EuclideanDistanceHeuristic import *
 
 
 @dataclass
@@ -42,6 +43,7 @@ class GeneralPlayer:
 
         self.max_ground_heuristic_func = MaxGroundHeuristic()
         self.dist_from_opponent_heuristic = DistFromOpponentHeuristic()
+        self.euclidean_distance_heuristic = EuclideanDistanceHeuristic()
 
 
 
@@ -85,6 +87,12 @@ class GeneralPlayer:
 
         return distance_from_opp
 
+    def euclidean_distance_from_opponent(self, state : State):
+        
+
+        euclidean_distance_from_opp = self.euclidean_distance_heuristic.evaluate(state.my_loc, state.enemy_loc)
+
+        return euclidean_distance_from_opp
 
     def state_score(self, state : State):
         """Return the numer of available states from a certain location
@@ -134,6 +142,9 @@ class GeneralPlayer:
 
         # calculate the distance from an opponent
         heuristic_variables.append(self.distance_from_opponent(state))
+
+        # calculate the Euclidean distance from an opponent
+        heuristic_variables.append(self.euclidean_distance_from_opponent(state))
 
 
 
