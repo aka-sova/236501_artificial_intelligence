@@ -3,6 +3,7 @@ import copy
 import random
 from dataclasses import dataclass
 from GeneralPlayer import State, GeneralPlayer
+import C_CONSTANTS
 
 
 
@@ -16,6 +17,7 @@ class AlphaBetaPlayer(GeneralPlayer):
         self.leaves_developed = 0
         self.heuristics_used = 0
         self.branches_pruned = 0
+        
 
     def make_move(self, time_limit) -> tuple:  # time parameter is not used, we assume we have enough time.
 
@@ -25,6 +27,7 @@ class AlphaBetaPlayer(GeneralPlayer):
 
         prev_loc = self.state.my_loc
         self.state.board[prev_loc] = -1
+        self.move_number += 1
 
 
         # time = 1000
@@ -43,10 +46,13 @@ class AlphaBetaPlayer(GeneralPlayer):
         # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
 
         time_until_now = tm.time() - ID_start_time
+        # print(f"First iteration finished in {time_until_now}")
+
         next_iteration_max_time = self.predict_next_iteration(time_until_now) # time_until_now = last_iteration_time
     
+        max_depth = self.state.while_tiles_am
 
-        while time_until_now + next_iteration_max_time < time_limit:
+        while time_until_now + next_iteration_max_time < time_limit and current_depth < max_depth:
 
             current_depth += 1
 
@@ -56,6 +62,7 @@ class AlphaBetaPlayer(GeneralPlayer):
             # print(f"Depth : {current_depth}")
 
             self.leaves_developed = 0
+            self.branches_pruned = 0
             self.heuristics_used = 0
 
             (best_new_move, max_value ) = self.rb_alphabeta(self.state, DecidingAgent = "Me", D = current_depth, Alpha = float('-inf'), Beta = float('inf'))
@@ -69,16 +76,18 @@ class AlphaBetaPlayer(GeneralPlayer):
 
             # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
             # print(f"Predicted time : {next_iteration_max_time}, time elapsed: {last_iteration_time}")
-
+            
             
 
             next_iteration_max_time = self.predict_next_iteration(last_iteration_time)
             time_until_now = tm.time() - ID_start_time
+            # print(f"Time until now: {time_until_now}")
 
 
 
         print("====================")
         print(f"Agent: {self.agent_name}")
+        print(f"Move No: {self.move_number}")        
         print(f"Depth reached : {current_depth}")
         print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
         print(f"Move chosen: {best_move_so_far}  Value = {max_value}")
@@ -87,8 +96,9 @@ class AlphaBetaPlayer(GeneralPlayer):
         self.state.update(best_move_so_far, "Me")
 
 
+        if C_CONSTANTS.USE_COMPARISON:
+            return current_depth, max_value
         return best_move_so_far
-        # return current_depth, max_value
 
 
 
@@ -118,7 +128,7 @@ class AlphaBetaPlayer(GeneralPlayer):
 
         # get all the children states
         children_moves = self.get_children(CurrentState, DecidingAgent)
-        # random.shuffle(children_moves)
+        random.shuffle(children_moves)
         
         if DecidingAgent == "Me":
             # MAX

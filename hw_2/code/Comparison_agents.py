@@ -5,23 +5,35 @@ import numpy as np
 from MinimaxPlayer import MinimaxPlayer
 from AlphaBetaPlayer import AlphaBetaPlayer
 from OrderedAlphaBetaPlayer import OrderedAlphaBetaPlayer
+from LiteAlphaBetaPlayer import LiteAlphaBetaPlayer
+from HeavyAlphaBetaPlayer import HeavyAlphaBetaPlayer
+
+
 import matplotlib.pyplot as plt
+
+import C_CONSTANTS
 
 # Configurations
 names = ['Minimax', 'AlphaBeta', 'OrderedAlphaBeta']
 colors = ['r', 'g', 'b']
 player_classes = [MinimaxPlayer, AlphaBetaPlayer, OrderedAlphaBetaPlayer]
-
 names_pruning = ['AlphaBeta', 'OrderedAlphaBeta']
-# colors = ['g', 'b']
-# player_classes = [AlphaBetaPlayer, OrderedAlphaBetaPlayer]
+
+
+# names = ['LiteAlphaBetaPlayer', 'HeavyAlphaBetaPlayer']
+# colors = ['r', 'g']
+# player_classes = [LiteAlphaBetaPlayer, HeavyAlphaBetaPlayer]
+# names_pruning = ['LiteAlphaBetaPlayer', 'HeavyAlphaBetaPlayer']
+
+
+
 
 time_arr_1 = np.linspace(0.1, 3, 10)
 time_arr_2 = np.linspace(3, 30, 5)
 
-time_arr = np.concatenate((time_arr_1, time_arr_2), axis = None)
+time_arr = np.concatenate((time_arr_1, time_arr_2[1:]), axis = None)
 
-time_arr = time_arr_1
+# time_arr = time_arr_1
 
 fig = plt.figure()
 fig2 = plt.figure()
@@ -77,11 +89,15 @@ for name, color, player_class in zip(names, colors, player_classes):
     leaves_developed = []
     max_values = []
 
+    
+
 
     for t in time_arr:
         print(f"time: {round(t,2)}")
         player = player_class()
         player.set_game_params(ai_board.copy())
+        # C_CONSTANTS.MAX_GROUND_DISTANCE = player.max_ground_distance
+
         d, max_val = player.make_move(t)
 
         times.append(t)

@@ -34,9 +34,14 @@ class State:
         self.grey_tiles_am += 1
 
     @property
-    def free_tiles_ratio(self):
+    def grey_tiles_ratio(self):
         global board_size
         return round(self.grey_tiles_am / board_size,2)
+
+    @property
+    def while_tiles_am(self):
+        global board_size
+        return board_size - self.grey_tiles_am
 
     def __hash__(self):
         return id(self)
@@ -51,6 +56,7 @@ class GeneralPlayer:
 
         self.leaves_developed = 0
         self.heuristics_used = 0
+        self.move_number = 0
 
         self.max_ground_heuristic_func = MaxGroundHeuristic()
         self.dist_from_opponent_heuristic = DistFromOpponentHeuristic()
@@ -164,6 +170,8 @@ class GeneralPlayer:
 
         # calculate the distance from an opponent
         dist_from_opp = self.distance_from_opponent(state)
+
+        # print(f"dist_from_opp = {dist_from_opp}")
 
         if dist_from_opp != -1 and dist_from_opp > C_CONSTANTS.DIST_FROM_OPP_RELEVANT:
             # use it only if it's large enough

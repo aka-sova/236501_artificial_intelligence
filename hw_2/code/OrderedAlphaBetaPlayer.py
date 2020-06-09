@@ -1,7 +1,7 @@
 import time as tm
 import copy
 import random 
-
+import C_CONSTANTS
 
 from dataclasses import dataclass
 from GeneralPlayer import State, GeneralPlayer
@@ -30,6 +30,8 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
         prev_loc = self.state.my_loc
         self.state.board[prev_loc] = -1
+        self.move_number += 1
+
         self.lastMinimaxValues = {}
 
 
@@ -54,8 +56,9 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
         next_iteration_max_time = self.predict_next_iteration(time_until_now) # time_until_now = last_iteration_time
     
+        max_depth = self.state.while_tiles_am
 
-        while time_until_now + next_iteration_max_time < time_limit:
+        while time_until_now + next_iteration_max_time < time_limit  and current_depth < max_depth:
 
             current_depth += 1
 
@@ -65,6 +68,7 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
             # print(f"Depth : {current_depth}")
 
             self.leaves_developed = 0
+            self.branches_pruned = 0
             self.heuristics_used = 0
 
             (best_new_move, max_value ) = self.rb_ordered_alphabeta(self.state, DecidingAgent = "Me", \
@@ -90,6 +94,7 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
         print("====================")
         print(f"Agent: {self.agent_name}")
+        print(f"Move No: {self.move_number}")
         print(f"Depth reached : {current_depth}")
         print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
         print(f"Move chosen: {best_move_so_far}  Value = {max_value}")
@@ -97,9 +102,10 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
         self.state.update(best_move_so_far, "Me")
 
-
+        if C_CONSTANTS.USE_COMPARISON:
+            return current_depth, max_value
         return best_move_so_far
-        # return current_depth, max_value
+
 
 
 
@@ -129,7 +135,7 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
         # get all the children states
         children_moves = self.get_children(CurrentState, DecidingAgent)
-        # random.shuffle(children_moves)
+        random.shuffle(children_moves)
 
         if isRoot:  
             # reorder the moves according to the lastMinimaxValues

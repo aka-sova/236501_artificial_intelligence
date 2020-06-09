@@ -4,6 +4,9 @@ import random
 from dataclasses import dataclass
 from GeneralPlayer import State, GeneralPlayer
 
+import C_CONSTANTS
+
+
 
 
 class MinimaxPlayer(GeneralPlayer):
@@ -24,6 +27,7 @@ class MinimaxPlayer(GeneralPlayer):
 
         prev_loc = self.state.my_loc
         self.state.board[prev_loc] = -1
+        self.move_number += 1
 
 
         # time = 1000
@@ -43,15 +47,24 @@ class MinimaxPlayer(GeneralPlayer):
         # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
 
         time_until_now = tm.time() - ID_start_time
+        
+        # print(f"First iteration finished in {time_until_now}")
+
         next_iteration_max_time = self.predict_next_iteration(time_until_now) # time_until_now = last_iteration_time
     
-
-        while time_until_now + next_iteration_max_time < time_limit:
+        max_depth = self.state.while_tiles_am
+        
+        while time_until_now + next_iteration_max_time < time_limit and current_depth < max_depth:
             # perform the next depth iteration  
             iteration_start_time = tm.time()
 
+            current_depth += 1
+
             # print(f"Depth : {current_depth}")
+
             self.leaves_developed = 0
+            self.heuristics_used = 0
+
             (best_new_move, max_value ) = self.rb_minimax(self.state, DecidingAgent = "Me", D = current_depth)
             best_move_so_far = best_new_move
 
@@ -63,17 +76,19 @@ class MinimaxPlayer(GeneralPlayer):
 
             last_iteration_time = tm.time() - iteration_start_time
 
+            
+
             # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
             # print(f"Predicted time : {next_iteration_max_time}, time elapsed: {last_iteration_time}")
 
-            current_depth += 1
-
             next_iteration_max_time = self.predict_next_iteration(last_iteration_time)
             time_until_now = tm.time() - ID_start_time
+            # print(f"Time until now: {time_until_now}")            
 
 
         print("====================")
         print(f"Agent: {self.agent_name}")
+        print(f"Move No: {self.move_number}")        
         print(f"Depth reached : {current_depth}")
         print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
         print(f"Move chosen: {best_move_so_far}  Value = {max_value}")
@@ -81,9 +96,9 @@ class MinimaxPlayer(GeneralPlayer):
 
         self.state.update(best_move_so_far, "Me")
 
-
+        if C_CONSTANTS.USE_COMPARISON:
+            return current_depth, max_value
         return best_move_so_far
-        # return current_depth, max_value
 
 
 
@@ -113,7 +128,7 @@ class MinimaxPlayer(GeneralPlayer):
 
         # get all the children states
         children_moves = self.get_children(CurrentState, DecidingAgent)
-        # random.shuffle(children_moves)
+        random.shuffle(children_moves)
 
         if DecidingAgent == "Me":
             # MAX
@@ -149,7 +164,6 @@ class MinimaxPlayer(GeneralPlayer):
                 ChildState = copy.deepcopy(CurrentState)
                 ChildState.update(child_move, DecidingAgent)
 
-                self.leaves_developed +=1
                 _, min_child_value = self.rb_minimax(ChildState, "Me", D-1)
                 if min_child_value < CurMin:
                     CurMin = min_child_value
