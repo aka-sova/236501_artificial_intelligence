@@ -1,4 +1,5 @@
 import math
+import C_CONSTANTS
 
 class MaxGroundHeuristic:
     def __init__(self, board=None, player_loc=None, opp_loc=None):
@@ -6,8 +7,6 @@ class MaxGroundHeuristic:
         self.player_loc = player_loc
         self.opp_loc = opp_loc
         self.directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-        self.search_limit = 10 # limit the radius for calculations
-        self.use_limit = 1
 
     def evaluate(self):
             player_ground = 0
@@ -78,7 +77,7 @@ class MaxGroundHeuristic:
             for i in range(row):
                 for j in range(col):
                     pos = (i,j)
-                    if self.board[i][j] == 0 and self.get_euclidean_dist(src_loc, (i,j)) < self.search_limit:
+                    if self.board[i][j] == 0 and self.get_euclidean_dist(src_loc, (i,j)) < C_CONSTANTS.MAX_GROUND_DISTANCE:
                         queue.append(pos)
             queue.append(src_loc)
 

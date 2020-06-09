@@ -1,5 +1,7 @@
 import time as tm
 import copy
+import random 
+
 
 from dataclasses import dataclass
 from GeneralPlayer import State, GeneralPlayer
@@ -97,6 +99,7 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
 
         return best_move_so_far
+        # return current_depth, max_value
 
 
 
@@ -126,6 +129,7 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
 
         # get all the children states
         children_moves = self.get_children(CurrentState, DecidingAgent)
+        # random.shuffle(children_moves)
 
         if isRoot:  
             # reorder the moves according to the lastMinimaxValues

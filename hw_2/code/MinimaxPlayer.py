@@ -1,6 +1,6 @@
 import time as tm
 import copy
-
+import random
 from dataclasses import dataclass
 from GeneralPlayer import State, GeneralPlayer
 
@@ -83,6 +83,7 @@ class MinimaxPlayer(GeneralPlayer):
 
 
         return best_move_so_far
+        # return current_depth, max_value
 
 
 
@@ -112,7 +113,8 @@ class MinimaxPlayer(GeneralPlayer):
 
         # get all the children states
         children_moves = self.get_children(CurrentState, DecidingAgent)
-        
+        # random.shuffle(children_moves)
+
         if DecidingAgent == "Me":
             # MAX
 

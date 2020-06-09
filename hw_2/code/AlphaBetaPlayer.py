@@ -1,6 +1,6 @@
 import time as tm
 import copy
-
+import random
 from dataclasses import dataclass
 from GeneralPlayer import State, GeneralPlayer
 
@@ -61,8 +61,6 @@ class AlphaBetaPlayer(GeneralPlayer):
             (best_new_move, max_value ) = self.rb_alphabeta(self.state, DecidingAgent = "Me", D = current_depth, Alpha = float('-inf'), Beta = float('inf'))
             best_move_so_far = best_new_move
 
-            # print(f"Move value : {max_value}")
-
             if max_value == -99999 or max_value == 99999:
                 # the only outcome is losing or winning
                 break
@@ -90,6 +88,7 @@ class AlphaBetaPlayer(GeneralPlayer):
 
 
         return best_move_so_far
+        # return current_depth, max_value
 
 
 
@@ -119,6 +118,7 @@ class AlphaBetaPlayer(GeneralPlayer):
 
         # get all the children states
         children_moves = self.get_children(CurrentState, DecidingAgent)
+        # random.shuffle(children_moves)
         
         if DecidingAgent == "Me":
             # MAX

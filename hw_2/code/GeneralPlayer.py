@@ -6,6 +6,8 @@ from MaxGroundHeuristic import *
 from DistFromOpponentHeuristic import *
 from EuclideanDistanceHeuristic import *
 
+import C_CONSTANTS
+
 
 @dataclass
 class State:
@@ -160,14 +162,18 @@ class GeneralPlayer:
         # num of available states from a certain location
         heuristic_variables.append(self.state_score(state))
 
-        # calculate the territory advantage of the player
-        heuristic_variables.append(self.max_ground_value(state))
-
         # calculate the distance from an opponent
         dist_from_opp = self.distance_from_opponent(state)
-        if dist_from_opp != -1:
+
+        if dist_from_opp != -1 and dist_from_opp > C_CONSTANTS.DIST_FROM_OPP_RELEVANT:
+            # use it only if it's large enough
             # if not - meaning we never meet an opponent and should only care about maximizing our own territory
-            heuristic_variables.append(dist_from_opp)
+
+            heuristic_variables.append(dist_from_opp *C_CONSTANTS.DIST_FROM_OPP_FACTOR)
+
+        # calculate the territory advantage of the player
+        heuristic_variables.append(self.max_ground_value(state) * C_CONSTANTS.MAX_GROUND_FACTOR)
+
 
         # calculate the Euclidean distance from an opponent
         # heuristic_variables.append(self.euclidean_distance_from_opponent(state))
