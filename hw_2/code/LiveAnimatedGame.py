@@ -151,12 +151,13 @@ def create_flags():
 
 
 if __name__ == '__main__':
-    # print('runing')
+
+
     player_1_type = sys.argv[1]
     player_2_type = sys.argv[2]
 
     # player_1_type = "LivePlayer"
-    # player_2_type = "AlphaBetaPlayer"
+    # player_2_type = "OrderedAlphaBetaPlayer"
 
     module_1 = __import__(player_1_type)
     module_2 = __import__(player_2_type)
@@ -165,6 +166,9 @@ if __name__ == '__main__':
 
     d = create_flags()
     map_index = d['map']
+
+    # map_index = 4
+
     map = maps[map_index]
     time_to_make_a_move = d['time_to_make_a_move']
 

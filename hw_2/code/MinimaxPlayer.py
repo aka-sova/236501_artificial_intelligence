@@ -86,18 +86,18 @@ class MinimaxPlayer(GeneralPlayer):
             # print(f"Time until now: {time_until_now}")            
 
 
-        print("====================")
-        print(f"Agent: {self.agent_name}")
-        print(f"Move No: {self.move_number}")        
-        print(f"Depth reached : {current_depth}")
-        print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
-        print(f"Move chosen: {best_move_so_far}  Value = {max_value}")
-        print("====================")
+        # print("====================")
+        # print(f"Agent: {self.agent_name}")
+        # print(f"Move No: {self.move_number}")        
+        # print(f"Depth reached : {current_depth}")
+        # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}")
+        # print(f"Move chosen: {best_move_so_far}  Value = {max_value}")
+        # print("====================")
 
         self.state.update(best_move_so_far, "Me")
 
-        if C_CONSTANTS.USE_COMPARISON:
-            return current_depth, max_value
+        # if C_CONSTANTS.USE_COMPARISON:
+        #     return current_depth, max_value
         return best_move_so_far
 
 

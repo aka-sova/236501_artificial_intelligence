@@ -92,18 +92,18 @@ class OrderedAlphaBetaPlayer(GeneralPlayer):
             next_iteration_max_time = self.predict_next_iteration(last_iteration_time)
             time_until_now = tm.time() - ID_start_time
 
-        print("====================")
-        print(f"Agent: {self.agent_name}")
-        print(f"Move No: {self.move_number}")
-        print(f"Depth reached : {current_depth}")
-        print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
-        print(f"Move chosen: {best_move_so_far}  Value = {max_value}")
-        print("====================")
+        # print("====================")
+        # print(f"Agent: {self.agent_name}")
+        # print(f"Move No: {self.move_number}")
+        # print(f"Depth reached : {current_depth}")
+        # print(f"Leaves developed: {self.leaves_developed}, Heuristics used : {self.heuristics_used}, Branches pruned: {self.branches_pruned}")
+        # print(f"Move chosen: {best_move_so_far}  Value = {max_value}")
+        # print("====================")
 
         self.state.update(best_move_so_far, "Me")
 
-        if C_CONSTANTS.USE_COMPARISON:
-            return current_depth, max_value
+        # if C_CONSTANTS.USE_COMPARISON:
+        #     return current_depth, max_value
         return best_move_so_far
 
 

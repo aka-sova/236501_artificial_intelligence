@@ -158,6 +158,39 @@ class GeneralPlayer:
             # return 4 - num_steps_available
             return num_steps_available
 
+    def state_score_original(self, state : State):
+        """Return the numer of available states from a certain location
+
+        0 = all moves available
+        1 = 3 moves available
+        2 = 2 moves available
+        3 = 1 moves available
+        -1 = no moves available
+        
+        """
+
+        # always estimate the state score of 'Me'
+        board, loc = state.board, state.my_loc
+
+
+        # if DecidingAgent == "Me":
+        #     board, loc = state.board, state.my_loc
+        # else:
+        #     board, loc = state.board, state.enemy_loc
+
+        num_steps_available = 0
+        for d in self.directions:
+            i = loc[0] + d[0]
+            j = loc[1] + d[1]
+            if 0 <= i < len(board) and 0 <= j < len(board[0]) and board[i][j] == 0:  # then move is legal
+                num_steps_available += 1
+
+        if num_steps_available == 0:
+            return -1
+        else:
+            return 4 - num_steps_available
+            # return num_steps_available   
+
     def get_heuristic_value(self, state : State, DecidingAgent : str):
         """Will return the heuristic of a specific state"""
 
@@ -165,22 +198,28 @@ class GeneralPlayer:
 
         heuristic_variables = []
 
-        # num of available states from a certain location
-        heuristic_variables.append(self.state_score(state))
+
 
         # calculate the distance from an opponent
         dist_from_opp = self.distance_from_opponent(state)
-
-        # print(f"dist_from_opp = {dist_from_opp}")
 
         if dist_from_opp != -1 and dist_from_opp > C_CONSTANTS.DIST_FROM_OPP_RELEVANT:
             # use it only if it's large enough
             # if not - meaning we never meet an opponent and should only care about maximizing our own territory
 
             heuristic_variables.append(dist_from_opp *C_CONSTANTS.DIST_FROM_OPP_FACTOR)
+            # calculate the territory advantage of the player
+            heuristic_variables.append(self.max_ground_value(state) * C_CONSTANTS.MAX_GROUND_FACTOR)
 
-        # calculate the territory advantage of the player
-        heuristic_variables.append(self.max_ground_value(state) * C_CONSTANTS.MAX_GROUND_FACTOR)
+            # num of available states from a certain location
+            heuristic_variables.append(self.state_score(state))
+
+        else:
+            # original state score
+            heuristic_variables.append(self.state_score(state))
+
+            # calculate the territory advantage of the player
+            heuristic_variables.append(self.max_ground_value(state) * C_CONSTANTS.MAX_GROUND_FACTOR)
 
 
         # calculate the Euclidean distance from an opponent
