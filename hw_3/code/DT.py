@@ -267,8 +267,8 @@ if __name__ == '__main__':
     train_dataset = pd.read_csv("train.csv")
     test_dataset = pd.read_csv("test.csv")
 
-    CREATE_NEW_TREE = 1
-    CREATE_NEW_PRUNED_TREES = 1
+    CREATE_NEW_TREE = 0
+    CREATE_NEW_PRUNED_TREES = 0
 
 
     # get the attributes list 
