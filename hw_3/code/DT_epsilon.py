@@ -1,7 +1,4 @@
 
-
-from decorators import time_it
-
 import numpy as np
 import pandas as pd
 import sklearn
@@ -16,11 +13,13 @@ class Node():
         self.is_branch = False
         self.attribute = None
         self.thresholds = None
+        self.epsilon = None
         self.nodes = {}             # dict of type  
 
 
         self.label = None
         self.is_leaf = False
+
 
 
 
@@ -46,6 +45,7 @@ def find_entropy(dataset, target_attribute):
     return total_entropy
 
 
+
 def find_attribute_threshold_entropy(dataset, attribute, threshold, target_attribute):
     """ Find the entropy for the dataset using a given attribute and threshold  """
 
@@ -69,7 +69,6 @@ def find_attribute_threshold_entropy(dataset, attribute, threshold, target_attri
 
     return entropy_sum
 
-@time_it
 def get_best_attribute(dataset, attributes, target_attribute) -> tuple:
 
     # for each attribute, we try every possible threshold (which is between the values for this attribute)
@@ -82,7 +81,7 @@ def get_best_attribute(dataset, attributes, target_attribute) -> tuple:
 
     for _, attribute in enumerate(attributes):
 
-        # print(f"\tAnalyzing attribute: {attribute}")
+        print(f"\tAnalyzing attribute: {attribute}")
 
         # get all the values for this attribute and order them increasingly
         attribute_values = dataset[attribute].tolist()
@@ -138,8 +137,8 @@ def get_class_labels(dataset, target_attribute) -> list :
     return unique_values
 
 
-def ID3(dataset : pd.core.frame.DataFrame , attributes : set, target_attribute : str, pruning_parameter : int) -> Node:
-    """ Recursive function which builds the ID3 tree with consistent dataset"""
+def ID3_epsilon(dataset : pd.core.frame.DataFrame , attributes : set, target_attribute : str, pruning_parameter, depth_limit) -> Node:
+    """ Recursive function which builds the ID3_epsilon tree with consistent dataset"""
 
     node = Node()
 
@@ -151,7 +150,7 @@ def ID3(dataset : pd.core.frame.DataFrame , attributes : set, target_attribute :
     labels = get_class_labels(dataset, target_attribute)
     if len(labels) == 1:
         node.is_leaf = True
-        node.label = labels[0]
+        node.label = str(labels[0])
         return node
     
 
@@ -173,16 +172,32 @@ def ID3(dataset : pd.core.frame.DataFrame , attributes : set, target_attribute :
             node.label = majority_class
             return node
 
+    # if reached the limit of the depth, create the leaf node with most popular class
+    if depth_limit is not None:
+        if depth_limit == 0:
+            majority_class = get_majority_class(dataset, target_attribute)
+            node.is_leaf = True
+            node.label = majority_class
+            return node
+
     # 2. Pick the attribute which maximizes the IG, and the threshold 
     #       accept multiple threshold values, and partition the dataset according to this
 
     best_attribute, thresholds = get_best_attribute(dataset, attributes, target_attribute)
     node.attribute = best_attribute
     node.thresholds = thresholds
+    # 2.1 NEW - calculate the epsilon
+    node.epsilon = 0.1 * np.std(dataset[best_attribute])
+    # node.epsilon = 0
+
     node.is_branch = True
+
 
     # 3. remove this attribute from attributes list
     attributes.remove(best_attribute)
+
+
+
 
     
     # 4. iterate over all of the group which are created by partitioning through this best_attribute
@@ -190,32 +205,58 @@ def ID3(dataset : pd.core.frame.DataFrame , attributes : set, target_attribute :
         
         # 4.1  select all the dataset for this region
         if threshold_idx == 0:
-            partition = dataset[(dataset[best_attribute] < thresholds[threshold_idx])]
+            # First
+            partition = dataset[(dataset[best_attribute] <= thresholds[threshold_idx] + node.epsilon)]
+
         else:
-            partition = dataset[(dataset[best_attribute] < thresholds[threshold_idx] and dataset[best_attribute] > thresholds[threshold_idx-1])]
-        
+            # Will enter here only if 2 or more thresholds exist
+            # In between - have to check 2 conditions
+            partition = dataset[(dataset[best_attribute] <= thresholds[threshold_idx] + node.epsilon and dataset[best_attribute] >= thresholds[threshold_idx-1] - node.epsilon)]
+
+
         if partition.empty == False:
-            node.nodes[threshold_idx] = ID3(partition, copy.deepcopy(attributes), target_attribute, pruning_parameter)
+            node.nodes[threshold_idx] = ID3_epsilon(partition, copy.deepcopy(attributes), target_attribute, pruning_parameter, depth_limit -1)
 
 
-    # 4.2 Get the last partition and create a subtree
-    partition = dataset[(dataset[best_attribute] > thresholds[-1])]
+    # Last partition
+    partition = dataset[(dataset[best_attribute] >= (thresholds[-1] - node.epsilon))]
     if partition.empty == False:
-        node.nodes[len(thresholds)] = ID3(partition, copy.deepcopy(attributes), target_attribute, pruning_parameter)
+        node.nodes[len(thresholds)] = ID3_epsilon(partition, copy.deepcopy(attributes), target_attribute, pruning_parameter, depth_limit - 1)
+
 
     return node
+
+def most_frequent(input_list): 
+
+    occurences_dict = {}
+    preference = '1'  # 0/1 in case of tie
+
+    for val in input_list:
+        if val not in occurences_dict.keys():
+            occurences_dict[val] =1
+        else:
+            occurences_dict[val] += 1
+
+    max_occurences_key = max(occurences_dict, key=occurences_dict.get)
+
+    for key in occurences_dict.keys():
+        if occurences_dict[key] >= occurences_dict[max_occurences_key] and key == preference:
+            max_occurences_key = preference
+
+    return int(max_occurences_key)
 
 
 def measure_tree_accuracy(root_node, dataset, target_attribute):
     """ Measure and return the accuracy of the predictions on the dataset """
     total_data_amount = dataset.shape[0]
     true_predictions_amount = 0
-    
-    # for 
-    # 
+
     for sample_idx in range(dataset.shape[0]):
         sample = dataset.iloc[sample_idx]
-        class_prediction = get_class_prediction(root_node, sample)
+        class_predictions = get_class_prediction(root_node, sample, [])
+        class_prediction = most_frequent(class_predictions)
+
+
         class_true = int(sample[target_attribute])
 
         if class_true == class_prediction:
@@ -225,26 +266,45 @@ def measure_tree_accuracy(root_node, dataset, target_attribute):
     return true_predictions_amount/total_data_amount
 
 
-def get_class_prediction(node, sample):
+def get_class_prediction(node, sample, predictions_list):
 
     if node.label is not None:
-        prediction =  node.label
+        predictions_list.append(node.label)
     else:
         # get the value for the attribute
         value_attribute = sample[node.attribute]
 
         # find to which threshold index it suits (for case with multiple thresholds)
-        current_threshold_idx = 0
+        current_threshold_idx_list = []
 
         for thr_idx, threshold in enumerate(node.thresholds):
-            if value_attribute > threshold:
-                current_threshold_idx = thr_idx + 1
-                break
+            if thr_idx > 0 & thr_idx!= len(node.thresholds)-1:
+                # the threshold is in the middle, not first and not last - 
+                # should not enter here if only 1 threshold is used
+                if value_attribute <= node.thresholds[thr_idx] + node.epsilon & value_attribute >= node.thresholds[thr_idx-1] + node.epsilon:
+                    current_threshold_idx_list.append(thr_idx)
 
-        prediction = get_class_prediction(node.nodes[current_threshold_idx], sample)
+            else:
+                # threshold can be BOTH first and last!!
+
+                # first threshold
+                if thr_idx == 0:
+                    if value_attribute <= threshold + node.epsilon:
+                        current_threshold_idx_list.append(thr_idx)
+                # last threshold
+                if thr_idx == len(node.thresholds)-1:
+                    if value_attribute >= threshold - node.epsilon:
+                        current_threshold_idx_list.append(thr_idx+1)
+
+
+            
+
+        for threshold_idx in current_threshold_idx_list:
+            predictions_list = get_class_prediction(node.nodes[threshold_idx], sample, predictions_list)
+            # predictions_list.append(get_class_prediction(node.nodes[threshold_idx], sample, predictions_list))
         
 
-    return prediction
+    return predictions_list
 
 def check_tree_valid(node):
     """ Each leaf either has label or nodes """
@@ -256,6 +316,7 @@ def check_tree_valid(node):
     if node.is_branch:
         assert node.attribute is not None
         assert node.thresholds is not None
+        assert node.epsilon is not None
         assert node.nodes != {}
 
         for child_node in node.nodes:
@@ -267,8 +328,7 @@ if __name__ == '__main__':
     train_dataset = pd.read_csv("train.csv")
     test_dataset = pd.read_csv("test.csv")
 
-    CREATE_NEW_TREE = 1
-    CREATE_NEW_PRUNED_TREES = 1
+    CREATE_NEW_PRUNED_TREES = 0
 
 
     # get the attributes list 
@@ -277,62 +337,38 @@ if __name__ == '__main__':
     target_attribute = all_attributes_list[0]
     attributes = set(all_attributes_list[1:])
 
-    if CREATE_NEW_TREE:
 
-        ID3_tree = ID3(train_dataset, copy.deepcopy(attributes), target_attribute, None)
-
-        # save into file
-        with open('db/id3_tree_2.pkl', 'wb') as f: 
-            pickle.dump(ID3_tree, f)
-    else:
-        with open('db/id3_tree_2.pkl', 'rb') as f:
-            ID3_tree = pickle.load(f)
-
-
-    check_tree_valid(ID3_tree)
-    accuracy = measure_tree_accuracy(ID3_tree, test_dataset, target_attribute)
-
-    print(f"Pruning: N/A accuracy: {round(accuracy,5)}")
-
-
-    pruning_parameters = [3, 9, 27]
+    depth_parameters = [9]
     accuracy_pruning = []
     pruned_trees = []
 
     if CREATE_NEW_PRUNED_TREES:
         
 
-        for x in pruning_parameters:
+        for x in depth_parameters:
             print(f"Initialize parameter {x}")
-            pruned_tree = ID3(train_dataset, copy.deepcopy(attributes), target_attribute, x)
+            pruned_tree = ID3_epsilon(train_dataset, copy.deepcopy(attributes), target_attribute, None, x)
             pruned_trees.append(pruned_tree)
             check_tree_valid(pruned_tree)
 
             # save into file
-            with open(f"db/id3_pruned_{x}_tree_3.pkl", 'wb') as f: 
+            with open(f"db/id3_pruned_depth_{x}_tree_6.pkl", 'wb') as f: 
                 pickle.dump(pruned_tree, f)
     else:
-        for x in pruning_parameters:
+        for x in depth_parameters:
 
-            with open(f"db/id3_pruned_{x}_tree_3.pkl", 'rb') as f:
+            with open(f"db/id3_pruned_depth_{x}_tree_6.pkl", 'rb') as f:
                 ID3_loaded_tree = pickle.load(f)
 
             check_tree_valid(ID3_loaded_tree)
             pruned_trees.append(ID3_loaded_tree)
 
-    for idx, x in enumerate(pruning_parameters):
+    for idx, x in enumerate(depth_parameters):
 
         current_tree = pruned_trees[idx]
         accuracy_pruning.append(measure_tree_accuracy(current_tree, test_dataset, target_attribute))
 
-        print(f"Pruning: {x} accuracy: {round(accuracy_pruning[idx],5)}")
-
-
-    plt.plot(pruning_parameters, accuracy_pruning)
-    plt.xlabel('Pruning parameter')
-    plt.ylabel('Accuracy')
-    plt.show()
-
+        print(f"Depth limit: {x} accuracy: {round(accuracy_pruning[idx],5)}")
 
 
 
