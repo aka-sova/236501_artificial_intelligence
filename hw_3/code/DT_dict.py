@@ -1,6 +1,6 @@
 
 
-from decorators import time_it
+# from decorators import time_it
 
 import numpy as np
 import pandas as pd
@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import math
 import pickle
 import copy
-
+import os
 
 class Node():
     def __init__(self):
@@ -17,6 +17,7 @@ class Node():
         self.attribute = None
         self.thresholds = None
         self.nodes = {}             # dict of type  
+        self.epsilon = None
 
 
         self.label = None
@@ -91,14 +92,20 @@ class TreeClassifier():
     def build_tree(self):
         """ Build tree using some algorithm (ID3 here) """
 
-        self.root_node = ID3(self.train_data_T, self.attributes, self.target_attribute, None)
+        self.root_node = ID3(self.train_data_T, self.attributes, self.target_attribute, None, False, False, float('inf'))
 
     def build_pruned_tree(self, pruning_p):
-        """ Build tree using some algorithm (ID3 here) """
+        """ Build tree using ID3 with pruning """
 
-        self.root_node = ID3(self.train_data_T, self.attributes, self.target_attribute, pruning_p)
+        self.root_node = ID3(self.train_data_T, self.attributes, self.target_attribute, pruning_p, False, False, float('inf'))
 
-    def classify(self, csv_file_location: str):
+    def build_epsilon_tree(self, depth):
+        """ Build tree using ID3 with Epsilon and depth limit """
+        self.root_node = ID3(self.train_data_T, self.attributes, self.target_attribute, None, True, True, depth)
+
+
+
+    def classify(self, csv_file_location: str, use_epsilon : bool):
         """ Classify the set and return the accuracy """
 
         self.load_data(csv_file_location, "test")
@@ -117,10 +124,15 @@ class TreeClassifier():
             for att in self.all_attributes_list:
                 sample[att] = self.test_data_T[att][sample_idx]
 
-            class_prediction = self.get_class_prediction(self.root_node, sample)
+            if use_epsilon == False:
+                class_prediction = self.get_class_prediction(self.root_node, sample)
+            else:
+                class_prediction_list = self.get_class_prediction_epsilon(self.root_node, sample, [])
+                class_prediction = most_frequent(class_prediction_list)
+
             class_true = int(sample[self.target_attribute])
 
-            if class_true == class_prediction:
+            if int(class_true) == int(class_prediction):
                 true_predictions_amount += 1
 
 
@@ -141,6 +153,30 @@ class TreeClassifier():
             
 
         return prediction
+
+
+    def get_class_prediction_epsilon(self, node, sample, predictions_list):
+
+        if node.label is not None:
+            predictions_list.append(node.label)
+        else:
+
+            # find to which threshold index it suits (for case with multiple thresholds)
+            threshold = node.thresholds
+            next_nodes_list = []
+
+            if sample[node.attribute] < threshold + node.epsilon:
+                next_nodes_list.append(node.nodes["below"])
+
+            if sample[node.attribute] > threshold - node.epsilon:
+                next_nodes_list.append(node.nodes["above"])
+
+
+            for node in next_nodes_list:
+                predictions_list = self.get_class_prediction_epsilon(node, sample, predictions_list)
+            
+
+        return predictions_list
 
 
 def find_entropy(dataset, target_attribute):
@@ -166,17 +202,50 @@ def find_entropy(dataset, target_attribute):
     total_entropy *= -1
     return total_entropy
 
-def get_dataset_partition(dataset, attribute, threshold):
+def most_frequent(input_list): 
+    """ Find the most frequent value. If equal, set to preference """
+
+    occurences_dict = {}
+    preference = 1  # 0/1 in case of tie
+
+    for val in input_list:
+        if val not in occurences_dict.keys():
+            occurences_dict[val] =1
+        else:
+            occurences_dict[val] += 1
+
+    max_occurences_key = max(occurences_dict, key=occurences_dict.get)
+
+    for key in occurences_dict.keys():
+        if occurences_dict[key] >= occurences_dict[max_occurences_key] and key == preference:
+            max_occurences_key = preference
+
+    return int(max_occurences_key)
+
+def get_dataset_partition(dataset, attribute, threshold, use_epsilon : bool, epsilon_value):
     
 
     indexes_below = []
     indexes_above = []
 
-    for item in dataset[attribute].items():
-        if item[1] > threshold:
-            indexes_above.append(item[0])
-        else:
-            indexes_below.append(item[0])
+    if use_epsilon == True:
+        threshold_low = threshold - epsilon_value
+        threshold_high = threshold + epsilon_value
+
+
+        for item in dataset[attribute].items():
+            if item[1] > threshold_low:
+                indexes_above.append(item[0])
+
+            if item[1] < threshold_high:
+                indexes_below.append(item[0])
+
+    else:
+        for item in dataset[attribute].items():
+            if item[1] > threshold:
+                indexes_above.append(item[0])
+            else:
+                indexes_below.append(item[0])
 
 
     # create new partitions of datasets using those indexes
@@ -200,6 +269,7 @@ def get_dataset_partition(dataset, attribute, threshold):
     return dataset_below, dataset_above
 
 
+
 def find_attribute_threshold_entropy(dataset, attribute, threshold, target_attribute):
     """ Find the entropy for the dataset using a given attribute and threshold  """
 
@@ -208,7 +278,7 @@ def find_attribute_threshold_entropy(dataset, attribute, threshold, target_attri
     # find indexes for the dict where the threshold is above/below
 
 
-    dataset_below, dataset_above = get_dataset_partition(dataset, attribute, threshold)
+    dataset_below, dataset_above = get_dataset_partition(dataset, attribute, threshold, False, None)
 
     dataset_below_size = len(dataset_below[target_attribute])
     dataset_above_size = len(dataset_above[target_attribute])
@@ -297,13 +367,14 @@ def get_class_labels(dataset, target_attribute) -> list :
     return unique_values
 
 
-def ID3(dataset, attributes : set, target_attribute : str, pruning_parameter : int) -> Node:
+def ID3(dataset, attributes : set, target_attribute : str, pruning_parameter : int, \
+    use_epsilon : bool, use_depth_limit : bool, current_depth : int) -> Node:
     """ Recursive function which builds the ID3 tree with consistent dataset"""
 
     node = Node()
 
-    # print(f"Attributes number : {len(attributes)}")
-
+    #print(f"Attributes number : {len(attributes)}")
+    print(f"Dataset size : {len(dataset[target_attribute])}")
 
     # 0. If all of the dataset accounts for 1 single class,
     #     create a leaf node with the label of this class
@@ -312,6 +383,14 @@ def ID3(dataset, attributes : set, target_attribute : str, pruning_parameter : i
         node.is_leaf = True
         node.label = int(labels.pop())
         return node
+
+
+    if use_depth_limit == True:
+        if current_depth == 0:
+            majority_class = get_majority_class(dataset, target_attribute)
+            node.is_leaf = True
+            node.label = majority_class
+            return node
 
 
 
@@ -333,13 +412,17 @@ def ID3(dataset, attributes : set, target_attribute : str, pruning_parameter : i
     node.thresholds = threshold
     node.is_branch = True
 
+    # 2.5 Calculate the epsilon for q6
+    if use_epsilon:
+        node.epsilon = 0.1 * np.std(list(dataset[best_attribute].values()))
+
     # 3. remove this attribute from attributes list
     # attributes.remove(best_attribute)
 
-    dataset_below, dataset_above = get_dataset_partition(dataset, best_attribute, threshold)
+    dataset_below, dataset_above = get_dataset_partition(dataset, best_attribute, threshold, use_epsilon, node.epsilon)
 
-    node.nodes['below'] = ID3(dataset_below, attributes, target_attribute, pruning_parameter)
-    node.nodes['above'] = ID3(dataset_above, attributes, target_attribute, pruning_parameter)
+    node.nodes['below'] = ID3(dataset_below, attributes, target_attribute, pruning_parameter, use_epsilon, use_depth_limit, current_depth-1)
+    node.nodes['above'] = ID3(dataset_above, attributes, target_attribute, pruning_parameter, use_epsilon, use_depth_limit, current_depth-1)
 
     return node
 
@@ -364,51 +447,45 @@ def check_tree_valid(node):
 
 if __name__ == '__main__':
 
-    CREATE_NEW_TREES = 0
+    FORCE_NEW = 0
     
+    # general
+    tree_classifier = TreeClassifier()
+    tree_classifier.load_data("train.csv", "train")
+
+
+    # q2 
+    tree_classifier.clean_tree()
+
+    if  os.path.isfile("db/q2_dict_tree.pkl") == False or FORCE_NEW:
+        tree_classifier.build_tree()
+        tree_classifier.save_tree("db/q2_dict_tree.pkl")
+    else:
+        tree_classifier.load_tree("db/q2_dict_tree.pkl")
+
+
+    accuracy = tree_classifier.classify("test.csv", False)
+    print(f"Regular accuracy = {accuracy}")
+
+
+    # q3
+
     pruning_parameters = [3, 9, 27]
     accuracy_pruning = []
 
-    tree_classifier = TreeClassifier()
-
-
-
-    if CREATE_NEW_TREES : 
-
-        tree_classifier.load_data("train.csv", "train")
-
-        # q2 
+    for x in pruning_parameters:
+        # print(f"Start for pruning p = {x}")
         tree_classifier.clean_tree()
-        tree_classifier.build_tree()
-        tree_classifier.save_tree("db/q2_dict_tree.pkl")
-        accuracy = tree_classifier.classify("test.csv")
-        print(f"Regular accuracy = {accuracy}")
 
-
-        # q3
-
-        for x in pruning_parameters:
-            print(f"Start for pruning p = {x}")
-            tree_classifier.clean_tree()
+        if  os.path.isfile(f"db/q3_dict_tree_pruned_{x}.pkl") == False or FORCE_NEW:
             tree_classifier.build_pruned_tree(pruning_p = x)
             tree_classifier.save_tree(f"db/q3_dict_tree_pruned_{x}.pkl")
-            accuracy_pruning.append(tree_classifier.classify("test.csv"))
-            print(f"Pruned tree accuracy(P = {x}) = {accuracy_pruning[-1]}")
-
-    else:
-
-        # q2
-
-        tree_classifier.clean_tree()
-        tree_classifier.load_tree("db/q2_dict_tree.pkl")
-        accuracy = tree_classifier.classify("test.csv")
-        print(f"Regular accuracy = {accuracy}")
-
-        for x in pruning_parameters:
-            tree_classifier.clean_tree()
+        else:
             tree_classifier.load_tree(f"db/q3_dict_tree_pruned_{x}.pkl")
-            accuracy_pruning.append(tree_classifier.classify("test.csv"))
-            print(f"Pruned tree accuracy(P = {x}) = {accuracy_pruning[-1]}")
+
+
+        accuracy_pruning.append(tree_classifier.classify("test.csv", False))
+        print(f"Pruned tree accuracy(P = {x}) = {accuracy_pruning[-1]}")
 
 
 
@@ -416,6 +493,26 @@ if __name__ == '__main__':
     plt.xlabel('Pruning parameter')
     plt.ylabel('Accuracy')
     plt.savefig('db/q3.png')
+
+
+    # q6 
+
+    depth_parameters = [9]
+    accuracy_depth = []
+
+    for d in depth_parameters:
+        # print(f"Start for depth = {d}")
+        tree_classifier.clean_tree()
+
+        if  os.path.isfile(f"db/q6_dict_tree_depth_{d}.pkl") == False or FORCE_NEW:
+            tree_classifier.build_epsilon_tree(depth = d)
+            tree_classifier.save_tree(f"db/q6_dict_tree_depth_{d}.pkl")
+        else:
+            tree_classifier.load_tree(f"db/q6_dict_tree_depth_{d}.pkl")
+
+
+        accuracy_pruning.append(tree_classifier.classify("test.csv", use_epsilon = True))
+        print(f"Epsilon tree accuracy(max depth = {d}) = {accuracy_pruning[-1]}")
 
 
 
