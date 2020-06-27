@@ -160,4 +160,4 @@ if __name__ == '__main__':
     plt.plot(K_options, accuracy)
     plt.xlabel('K parameter in KNN')
     plt.ylabel('Accuracy')
-    plt.show()
+    plt.savefig('db/q9.png')
