@@ -22,15 +22,24 @@ class Node():
 
         self.label = None
         self.is_leaf = False
+        self.samples = None
 
 class TreeClassifier():
     def __init__(self):
-        self.train_data_T_pandas = None
 
+        self.train_data_T_pandas = None
         self.train_data_T = None
         self.train_data_pandas = None
+
+        self.test_data_T_pandas = None
+        self.test_data_T = None
+        self.test_data_pandas = None
+
+        self.all_attributes_list = None
         self.target_attribute = None
         self.attributes = None
+
+        self.normalization_params = {}
 
         self.root_node = None
 
@@ -62,10 +71,6 @@ class TreeClassifier():
             for key in self.train_data_T_pandas.keys():
                 self.train_data_T[key] = self.train_data_T_pandas[key]
 
-            # self.data_train_M = np.empty((len(self.train_data_T[self.target_attribute]),len(self.train_data_T.keys())))
-
-            # for att_num, att in enumerate(self.train_data_T.keys()):
-            #     self.data_train_M[:, att_num] = list(self.train_data_T[att].values())
 
             self.all_attributes_list = self.train_data_pandas.columns
 
@@ -86,6 +91,31 @@ class TreeClassifier():
         self.target_attribute = self.all_attributes_list[0]
         self.attributes = set(self.all_attributes_list[1:])
 
+    def normalize_train_data(self):
+
+        """ Normalize all the data """
+
+        # 1. iterate over every param except of the target attribute, fill the normalization params
+        #       and normalize all the values for that attribute
+            
+
+        for attribute in self.train_data_T.keys():
+
+            # print(f"Normalizing {attribute}")
+            if attribute == self.target_attribute:
+                continue
+
+            min_attribute = min(self.train_data_T[attribute].values())
+            max_attribute = max(self.train_data_T[attribute].values())
+            difference = max_attribute - min_attribute
+
+            self.normalization_params[attribute] = (min_attribute, max_attribute, difference)
+
+
+            new_values_list = [(value - min_attribute) / difference for value in self.train_data_T[attribute].values()]
+            new_values_dict = dict(enumerate(new_values_list))
+
+            self.train_data_T[attribute] = new_values_dict
 
 
 
@@ -105,7 +135,7 @@ class TreeClassifier():
 
 
 
-    def classify(self, csv_file_location: str, use_epsilon : bool):
+    def classify(self, csv_file_location: str, use_epsilon : bool, use_KNN : bool, K : int):
         """ Classify the set and return the accuracy """
 
         self.load_data(csv_file_location, "test")
@@ -127,8 +157,19 @@ class TreeClassifier():
             if use_epsilon == False:
                 class_prediction = self.get_class_prediction(self.root_node, sample)
             else:
-                class_prediction_list = self.get_class_prediction_epsilon(self.root_node, sample, [])
-                class_prediction = most_frequent(class_prediction_list)
+                if use_KNN == False:
+                    class_prediction_list = self.get_class_prediction_epsilon(self.root_node, sample, [])
+
+                    class_prediction = most_frequent(class_prediction_list)
+                else:
+                    assert K is not None
+                    sample = self.normalize_sample(sample)
+                    relevant_datasets_list = self.get_datasets_at_leaf_nodes(self.root_node, sample, [])
+
+                    relevant_dataset = self.get_dataset_from_lists(relevant_datasets_list)
+
+                    # create KNN classifier and classify using those nodes
+                    class_prediction = self.get_KNN_classification(relevant_dataset, sample, K)
 
             class_true = int(sample[self.target_attribute])
 
@@ -178,6 +219,101 @@ class TreeClassifier():
 
         return predictions_list
 
+    def get_datasets_at_leaf_nodes(self, node, sample, datasets_list):
+
+        if node.label is not None:
+            datasets_list.append(node.samples)
+        else:
+
+            # find to which threshold index it suits (for case with multiple thresholds)
+            threshold = node.thresholds
+            next_nodes_list = []
+
+            if sample[node.attribute] < threshold + node.epsilon:
+                next_nodes_list.append(node.nodes["below"])
+
+            if sample[node.attribute] > threshold - node.epsilon:
+                next_nodes_list.append(node.nodes["above"])
+
+            assert next_nodes_list != []
+
+            for node in next_nodes_list:
+                datasets_list = self.get_datasets_at_leaf_nodes(node, sample, datasets_list)
+            
+
+        return datasets_list
+
+    def normalize_sample(self, sample):
+
+        for attribute in sample.keys():
+            if attribute == self.target_attribute:
+                continue
+            # value - min / (max - min)
+            sample[attribute] = (sample[attribute] - self.normalization_params[attribute][0]) / self.normalization_params[attribute][2]
+
+        return sample
+        
+
+    def get_KNN_classification(self, dataset, sample, K):
+
+
+        # 2. Find the Euclidean distance to EVERY item in the training set
+        euclidean_dict = {}  # of type euclidean_dict[0] = (distance, classification) 
+
+        test_data_values = list(sample.values())
+        test_data_values = test_data_values[1:]
+
+
+        for train_example_idx in range(len(dataset[self.target_attribute])):
+            classification = dataset[self.target_attribute][train_example_idx]
+
+            train_data_values = []
+            for attribute in sample.keys():
+                train_data_values.append(dataset[attribute][train_example_idx])
+
+            train_data_values = train_data_values[1:]
+
+            distance = math.sqrt(sum([(a - b) ** 2 for a, b in zip(train_data_values, test_data_values)]))
+            euclidean_dict[train_example_idx] = (distance, classification)
+
+
+
+        # 3. Sort the distances, take K first, find the majority of classificaion, return
+
+        euclidean_list_sorted = sorted(euclidean_dict.items(),key=lambda x: x[1][0])
+
+        K = min(len(euclidean_list_sorted), K)
+        euclidean_list_truncated = euclidean_list_sorted[0:K]
+        
+        # take the majority class
+        class_1_len = len(list(distance_inst[1][1] for distance_inst in euclidean_list_truncated if distance_inst[1][1] == 1))
+        class_0_len = len(list(distance_inst[1][1] for distance_inst in euclidean_list_truncated if distance_inst[1][1] == 0))
+
+        if class_0_len > class_1_len:
+            return 0
+        return 1
+
+
+    def get_dataset_from_lists(self, dataset_lists):
+
+        dataset_dict = {}
+        dataset_idx = 0
+
+
+        for dataset in dataset_lists:
+
+            for input_dataset_idx in dataset[self.target_attribute].keys():
+
+                for att in self.all_attributes_list:
+
+                    if att not in dataset_dict.keys():
+                        dataset_dict[att] = {}
+
+                    dataset_dict[att][dataset_idx] = dataset[att][input_dataset_idx]
+
+                dataset_idx += 1
+
+        return dataset_dict
 
 def find_entropy(dataset, target_attribute):
     """ Find the entropy to the whole dataset in the node """
@@ -293,7 +429,7 @@ def find_attribute_threshold_entropy(dataset, attribute, threshold, target_attri
 
     return entropy_sum
 
-# @time_it
+
 def get_best_attribute(dataset, attributes, target_attribute) -> tuple:
 
     # for each attribute, we try every possible threshold (which is between the values for this attribute)
@@ -308,7 +444,7 @@ def get_best_attribute(dataset, attributes, target_attribute) -> tuple:
 
     for _, attribute in enumerate(attributes):
 
-        print(f"\tAnalyzing attribute: {attribute}")
+        # print(f"\tAnalyzing attribute: {attribute}")
 
         # get all the values for this attribute and order them increasingly
         attribute_values = list(dataset[attribute].values())
@@ -374,7 +510,7 @@ def ID3(dataset, attributes : set, target_attribute : str, pruning_parameter : i
     node = Node()
 
     #print(f"Attributes number : {len(attributes)}")
-    print(f"Dataset size : {len(dataset[target_attribute])}")
+    print(f"Dataset size : {len(dataset[target_attribute])} depth: {current_depth}")
 
     # 0. If all of the dataset accounts for 1 single class,
     #     create a leaf node with the label of this class
@@ -382,6 +518,7 @@ def ID3(dataset, attributes : set, target_attribute : str, pruning_parameter : i
     if len(labels) == 1:
         node.is_leaf = True
         node.label = int(labels.pop())
+        node.samples = dataset
         return node
 
 
@@ -389,6 +526,7 @@ def ID3(dataset, attributes : set, target_attribute : str, pruning_parameter : i
         if current_depth == 0:
             majority_class = get_majority_class(dataset, target_attribute)
             node.is_leaf = True
+            node.samples = dataset
             node.label = majority_class
             return node
 
@@ -401,6 +539,7 @@ def ID3(dataset, attributes : set, target_attribute : str, pruning_parameter : i
         if len(dataset[target_attribute]) <= pruning_parameter:
             majority_class = get_majority_class(dataset, target_attribute)
             node.is_leaf = True
+            node.samples = dataset
             node.label = majority_class
             return node
 
@@ -448,13 +587,11 @@ def check_tree_valid(node):
 if __name__ == '__main__':
 
     FORCE_NEW = 0
-    
-    # general
-    tree_classifier = TreeClassifier()
-    tree_classifier.load_data("train.csv", "train")
 
 
     # q2 
+    tree_classifier = TreeClassifier()
+    tree_classifier.load_data("train.csv", "train")
     tree_classifier.clean_tree()
 
     if  os.path.isfile("db/q2_dict_tree.pkl") == False or FORCE_NEW:
@@ -464,12 +601,14 @@ if __name__ == '__main__':
         tree_classifier.load_tree("db/q2_dict_tree.pkl")
 
 
-    accuracy = tree_classifier.classify("test.csv", False)
+    accuracy = tree_classifier.classify("test.csv", False, False, None)
     print(f"Regular accuracy = {accuracy}")
 
 
     # q3
 
+    tree_classifier = TreeClassifier()
+    tree_classifier.load_data("train.csv", "train")
     pruning_parameters = [3, 9, 27]
     accuracy_pruning = []
 
@@ -484,7 +623,7 @@ if __name__ == '__main__':
             tree_classifier.load_tree(f"db/q3_dict_tree_pruned_{x}.pkl")
 
 
-        accuracy_pruning.append(tree_classifier.classify("test.csv", False))
+        accuracy_pruning.append(tree_classifier.classify("test.csv", False, False, None))
         print(f"Pruned tree accuracy(P = {x}) = {accuracy_pruning[-1]}")
 
 
@@ -497,6 +636,8 @@ if __name__ == '__main__':
 
     # q6 
 
+    tree_classifier = TreeClassifier()
+    tree_classifier.load_data("train.csv", "train")
     depth_parameters = [9]
     accuracy_depth = []
 
@@ -511,9 +652,27 @@ if __name__ == '__main__':
             tree_classifier.load_tree(f"db/q6_dict_tree_depth_{d}.pkl")
 
 
-        accuracy_pruning.append(tree_classifier.classify("test.csv", use_epsilon = True))
+        accuracy_pruning.append(tree_classifier.classify("test.csv", use_epsilon = True, use_KNN = False, K = None))
         print(f"Epsilon tree accuracy(max depth = {d}) = {accuracy_pruning[-1]}")
 
 
+    # q11 
+
+    depth = 9
+    k = 9
+    tree_classifier = TreeClassifier()
+    tree_classifier.load_data("train.csv", "train")
 
 
+    if  os.path.isfile(f"db/q11_dict_tree_KNN.pkl") == False or FORCE_NEW:
+
+        tree_classifier.clean_tree()
+        tree_classifier.normalize_train_data()
+        tree_classifier.build_epsilon_tree(depth = depth)
+        tree_classifier.save_tree(f"db/q11_dict_tree_KNN.pkl")
+    else:
+        tree_classifier.normalize_train_data()
+        tree_classifier.load_tree(f"db/q11_dict_tree_KNN.pkl")
+
+    accuracy = tree_classifier.classify("test.csv", use_epsilon = True, use_KNN = True, K = 9)
+    print(f"Epsilon tree accuracy with KNN (max depth = {d}) = {accuracy}")

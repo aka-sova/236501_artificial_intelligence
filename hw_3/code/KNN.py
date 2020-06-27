@@ -146,7 +146,7 @@ if __name__ == '__main__':
     knn_classifier.normalize()
 
     K_options = [1, 3, 9, 27]
-    K_options = list(range(1, 20, 3)) + list(range(25, 100, 5)) + list(range(120, 400, 20))
+    # K_options = list(range(1, 20, 3)) + list(range(25, 100, 5)) + list(range(120, 400, 20))
 
     accuracy = []
 
