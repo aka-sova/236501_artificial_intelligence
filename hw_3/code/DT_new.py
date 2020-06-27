@@ -45,6 +45,31 @@ def find_entropy(dataset, target_attribute):
     total_entropy *= -1
     return total_entropy
 
+def find_entropy_dict(dataset_dict, target_attribute):
+    """ Find the entropy to the whole dataset in the node """
+
+    if len(dataset_dict['diagnosis'])  == 0:
+        return 0
+    
+    # calculate the probability for each output class
+    dataset_size = len(dataset_dict['diagnosis']) 
+    unique_values = set(dataset_dict[target_attribute].values())
+    data_counts = {}
+
+    for unique_value in unique_values:
+        vals_list_amount = len([value for value in dataset_dict[target_attribute].values() if value == unique_value])
+        data_counts[unique_value] = vals_list_amount
+
+    total_entropy = 0
+
+    for unique_value in unique_values:
+        data_amount = data_counts[unique_value]
+        prob = data_amount / dataset_size
+        total_entropy += prob * math.log(prob, 2)
+
+    total_entropy *= -1
+    return total_entropy
+
 
 def find_attribute_threshold_entropy(dataset, attribute, threshold, target_attribute):
     """ Find the entropy for the dataset using a given attribute and threshold  """
@@ -69,7 +94,42 @@ def find_attribute_threshold_entropy(dataset, attribute, threshold, target_attri
 
     return entropy_sum
 
-# @time_it
+def find_attribute_threshold_entropy_dict(dataset_dict, attribute, threshold, target_attribute):
+    """ Find the entropy for the dataset using a given attribute and threshold  """
+
+    # 1. partition the dataset into the part below and part above the threshold
+
+    # there should be no value equal to the threshold
+
+    # below indexes
+    below_keys = [key for key in dataset_dict[attribute].keys() if dataset_dict[attribute][key] < threshold]
+    above_keys = set(dataset_dict[attribute].keys())
+    above_keys.difference_update(set(below_keys))
+    above_keys = list(above_keys)
+
+    dataset_dict_below = copy.deepcopy(dataset_dict)
+
+    # for idx, key in enumerate(below_keys):
+
+    # ok i stopped here 
+
+
+    dataset_below = dataset[(dataset[attribute] < threshold)]
+    dataset_above = dataset[(dataset[attribute] > threshold)]
+
+    # dataset_below = dataset[(dataset[attribute].between(float("-inf"), threshold))]
+
+
+
+    entropy_below_normalized = find_entropy(dataset_below, target_attribute) * (len(dataset_below['diagnosis'])  / len(dataset_dict['diagnosis']))
+    entropy_above_normalized = find_entropy(dataset_above, target_attribute) * (len(dataset_above['diagnosis']) / len(dataset_dict['diagnosis']))
+
+    entropy_sum = entropy_below_normalized + entropy_above_normalized
+
+
+
+    return entropy_sum
+
 def get_best_attribute(dataset, attributes, target_attribute) -> tuple:
 
     # for each attribute, we try every possible threshold (which is between the values for this attribute)
@@ -82,7 +142,7 @@ def get_best_attribute(dataset, attributes, target_attribute) -> tuple:
 
     for _, attribute in enumerate(attributes):
 
-        # print(f"\tAnalyzing attribute: {attribute}")
+        print(f"\tAnalyzing attribute: {attribute}")
 
         # get all the values for this attribute and order them increasingly
         attribute_values = dataset[attribute].tolist()
@@ -124,9 +184,33 @@ def get_best_attribute(dataset, attributes, target_attribute) -> tuple:
 
 def get_majority_class(dataset, target_attribute) -> str:
     """ Get the class for which the majority of samples suit """
+
+
     majority_class = str(dataset[target_attribute].value_counts().argmax())
 
     return majority_class
+
+def get_majority_class_dict(dataset_dict, target_attribute) -> str:
+    """ Get the class for which the majority of samples suit """
+
+    target_att_values = set(dataset_dict[target_attribute].values())
+
+    max_val = float("-inf")
+    maj_class = None
+    preference = 1
+
+    for target_val in target_att_values:
+        vals_list_amount = len([value for value in dataset_dict[target_attribute].values() if value == target_val])
+        # print(f"target_val : {target_val} cases : {vals_list_amount}")
+        if vals_list_amount > max_val:
+            max_val = vals_list_amount
+            maj_class = str(target_val)
+        elif vals_list_amount == max_val and target_val == preference:
+            maj_class = str(target_val)
+
+
+
+    return maj_class
 
 def get_class_labels(dataset, target_attribute) -> list :
     """ Get all the possible unique values for the target attribute """
@@ -137,13 +221,20 @@ def get_class_labels(dataset, target_attribute) -> list :
 
     return unique_values
 
+def get_class_labels_dict(dataset_dict, target_attribute) -> list :
+    """ Get all the possible unique values for the target attribute """
 
-def ID3(dataset : pd.core.frame.DataFrame , attributes : set, target_attribute : str, pruning_parameter : int) -> Node:
+    unique_values = list(set(dataset_dict[target_attribute].values()))
+
+    return unique_values
+
+
+def ID3(dataset , attributes : set, target_attribute : str, pruning_parameter : int) -> Node:
     """ Recursive function which builds the ID3 tree with consistent dataset"""
 
     node = Node()
 
-    # print(f"Attributes number : {len(attributes)}")
+    print(f"Attributes number : {len(attributes)}")
 
 
     # 0. If all of the dataset accounts for 1 single class,
@@ -168,6 +259,7 @@ def ID3(dataset : pd.core.frame.DataFrame , attributes : set, target_attribute :
 
     if pruning_parameter is not None:
         if dataset.shape[0] <= pruning_parameter:
+        # if len(dataset_dict['diagnosis'])  <= pruning_parameter:
             majority_class = get_majority_class(dataset, target_attribute)
             node.is_leaf = True
             node.label = majority_class
@@ -182,7 +274,7 @@ def ID3(dataset : pd.core.frame.DataFrame , attributes : set, target_attribute :
     node.is_branch = True
 
     # 3. remove this attribute from attributes list
-    # attributes.remove(best_attribute)
+    attributes.remove(best_attribute)
 
     
     # 4. iterate over all of the group which are created by partitioning through this best_attribute
@@ -195,13 +287,13 @@ def ID3(dataset : pd.core.frame.DataFrame , attributes : set, target_attribute :
             partition = dataset[(dataset[best_attribute] < thresholds[threshold_idx] and dataset[best_attribute] > thresholds[threshold_idx-1])]
         
         if partition.empty == False:
-            node.nodes[threshold_idx] = ID3(partition, attributes, target_attribute, pruning_parameter)
+            node.nodes[threshold_idx] = ID3(partition, copy.deepcopy(attributes), target_attribute, pruning_parameter)
 
 
     # 4.2 Get the last partition and create a subtree
     partition = dataset[(dataset[best_attribute] > thresholds[-1])]
     if partition.empty == False:
-        node.nodes[len(thresholds)] = ID3(partition, attributes, target_attribute, pruning_parameter)
+        node.nodes[len(thresholds)] = ID3(partition, copy.deepcopy(attributes), target_attribute, pruning_parameter)
 
     return node
 
@@ -267,7 +359,7 @@ if __name__ == '__main__':
     train_dataset = pd.read_csv("train.csv")
     test_dataset = pd.read_csv("test.csv")
 
-    CREATE_NEW_TREE = 0
+    CREATE_NEW_TREE = 1
     CREATE_NEW_PRUNED_TREES = 1
 
 
@@ -277,15 +369,17 @@ if __name__ == '__main__':
     target_attribute = all_attributes_list[0]
     attributes = set(all_attributes_list[1:])
 
+    train_dataset_dict = train_dataset.to_dict()
+
     if CREATE_NEW_TREE:
 
         ID3_tree = ID3(train_dataset, copy.deepcopy(attributes), target_attribute, None)
 
         # save into file
-        with open('db/id3_tree_2.pkl', 'wb') as f: 
+        with open('id3_tree_2.pkl', 'wb') as f: 
             pickle.dump(ID3_tree, f)
     else:
-        with open('db/id3_tree_2.pkl', 'rb') as f:
+        with open('id3_tree_2.pkl', 'rb') as f:
             ID3_tree = pickle.load(f)
 
 
@@ -299,37 +393,33 @@ if __name__ == '__main__':
     accuracy_pruning = []
     pruned_trees = []
 
-    pruning_parameters = list(range(1,10)) + list(range(10, 100, 10))
-
     if CREATE_NEW_PRUNED_TREES:
         
 
         for x in pruning_parameters:
-            # print(f"Initialize parameter {x}")
+            print(f"Initialize parameter {x}")
             pruned_tree = ID3(train_dataset, copy.deepcopy(attributes), target_attribute, x)
             pruned_trees.append(pruned_tree)
             check_tree_valid(pruned_tree)
 
             # save into file
-            with open(f"db/id3_pruned_{x}_tree_3.pkl", 'wb') as f: 
+            with open(f"id3_pruned_{x}_tree_3.pkl", 'wb') as f: 
                 pickle.dump(pruned_tree, f)
-
-            accuracy_pruning.append(measure_tree_accuracy(pruned_trees[-1], test_dataset, target_attribute))
-
-            print(f"Pruning: {x} accuracy: {round(accuracy_pruning[-1],5)}")
     else:
         for x in pruning_parameters:
 
-            with open(f"db/id3_pruned_{x}_tree_3.pkl", 'rb') as f:
+            with open(f"id3_pruned_{x}_tree_3.pkl", 'rb') as f:
                 ID3_loaded_tree = pickle.load(f)
 
             check_tree_valid(ID3_loaded_tree)
             pruned_trees.append(ID3_loaded_tree)
 
-            current_tree = pruned_trees[-1]
-            accuracy_pruning.append(measure_tree_accuracy(current_tree[-1], test_dataset, target_attribute))
+    for idx, x in enumerate(pruning_parameters):
 
-            print(f"Pruning: {x} accuracy: {round(accuracy_pruning[-1],5)}")
+        current_tree = pruned_trees[idx]
+        accuracy_pruning.append(measure_tree_accuracy(current_tree, test_dataset, target_attribute))
+
+        print(f"Pruning: {x} accuracy: {round(accuracy_pruning[idx],5)}")
 
 
     plt.plot(pruning_parameters, accuracy_pruning)
