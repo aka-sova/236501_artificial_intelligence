@@ -376,24 +376,30 @@ def get_dataset_partition(dataset, attribute, threshold, use_epsilon : bool, eps
     indexes_below = []
     indexes_above = []
 
-    if use_epsilon == True:
-        threshold_low = threshold - epsilon_value
-        threshold_high = threshold + epsilon_value
+    # if use_epsilon == True:
+    #     threshold_low = threshold - epsilon_value
+    #     threshold_high = threshold + epsilon_value
 
 
-        for item in dataset[attribute].items():
-            if item[1] > threshold_low:
-                indexes_above.append(item[0])
+    #     for item in dataset[attribute].items():
+    #         if item[1] > threshold_low:
+    #             indexes_above.append(item[0])
 
-            if item[1] < threshold_high:
-                indexes_below.append(item[0])
+    #         if item[1] < threshold_high:
+    #             indexes_below.append(item[0])
 
-    else:
-        for item in dataset[attribute].items():
-            if item[1] > threshold:
-                indexes_above.append(item[0])
-            else:
-                indexes_below.append(item[0])
+    # else:
+    #     for item in dataset[attribute].items():
+    #         if item[1] > threshold:
+    #             indexes_above.append(item[0])
+    #         else:
+    #             indexes_below.append(item[0])
+
+    for item in dataset[attribute].items():
+        if item[1] > threshold:
+            indexes_above.append(item[0])
+        else:
+            indexes_below.append(item[0])
 
 
     # create new partitions of datasets using those indexes
